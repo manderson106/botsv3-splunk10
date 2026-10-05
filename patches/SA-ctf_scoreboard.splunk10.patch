@@ -1,0 +1,1832 @@
+diff '--color=auto' -ruN '--exclude=.git' '--exclude=currentscore.csv' a/SA-ctf_scoreboard/appserver/controllers/scoreboard_controller.py b/SA-ctf_scoreboard/appserver/controllers/scoreboard_controller.py
+--- a/SA-ctf_scoreboard/appserver/controllers/scoreboard_controller.py	2026-10-05 21:47:28.314701723 +0100
++++ b/SA-ctf_scoreboard/appserver/controllers/scoreboard_controller.py	2026-09-30 22:58:06.756655499 +0100
+@@ -35,7 +35,7 @@
+ sys.path.append(make_splunkhome_path(['etc', 'apps', 'SA-ctf_scoreboard', 'bin']))
+ import validatectf
+ 
+-bin_dir = os.path.join(util.get_apps_dir(), __file__.split('.')[-2], 'bin')
++bin_dir = os.path.join(util.get_apps_dir(), 'SA-ctf_scoreboard', 'bin')
+ 
+ if not bin_dir in sys.path:
+     sys.path.append(dir)
+diff '--color=auto' -ruN '--exclude=.git' '--exclude=currentscore.csv' a/SA-ctf_scoreboard/appserver/static/welcome.js b/SA-ctf_scoreboard/appserver/static/welcome.js
+--- a/SA-ctf_scoreboard/appserver/static/welcome.js	2026-10-05 21:47:28.320333816 +0100
++++ b/SA-ctf_scoreboard/appserver/static/welcome.js	2026-09-30 22:48:38.255830773 +0100
+@@ -3,12 +3,8 @@
+          "splunkjs/mvc",
+          "splunkjs/mvc/utils",
+          "splunkjs/mvc/searchmanager",
+-         "bootstrap.popover",
+-         "bootstrap.tooltip",
+          "splunkjs/mvc/simplexml/ready!"], function(_, $, mvc, utils, SearchManager){
+ 
+-  $("[data-toggle=popover]").popover();
+-  $("[data-toggle=tooltip]").tooltip();
+   var tokens = mvc.Components.get("default");
+   var user=Splunk.util.getConfigValue("USERNAME");
+ 
+diff '--color=auto' -ruN '--exclude=.git' '--exclude=currentscore.csv' a/SA-ctf_scoreboard/bin/sa_ctf_scoreboard/six.py b/SA-ctf_scoreboard/bin/sa_ctf_scoreboard/six.py
+--- a/SA-ctf_scoreboard/bin/sa_ctf_scoreboard/six.py	2026-10-05 21:47:28.341229973 +0100
++++ b/SA-ctf_scoreboard/bin/sa_ctf_scoreboard/six.py	2026-09-30 22:55:48.778798795 +0100
+@@ -1,6 +1,4 @@
+-"""Utilities for writing code that runs on Python 2 and 3"""
+-
+-# Copyright (c) 2010-2015 Benjamin Peterson
++# Copyright (c) 2010-2024 Benjamin Peterson
+ #
+ # Permission is hereby granted, free of charge, to any person obtaining a copy
+ # of this software and associated documentation files (the "Software"), to deal
+@@ -20,6 +18,8 @@
+ # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ # SOFTWARE.
+ 
++"""Utilities for writing code that runs on Python 2 and 3"""
++
+ from __future__ import absolute_import
+ 
+ import functools
+@@ -29,7 +29,7 @@
+ import types
+ 
+ __author__ = "Benjamin Peterson <benjamin@python.org>"
+-__version__ = "1.10.0"
++__version__ = "1.17.0"
+ 
+ 
+ # Useful for very coarse version differentiation.
+@@ -71,6 +71,11 @@
+             MAXSIZE = int((1 << 63) - 1)
+         del X
+ 
++if PY34:
++    from importlib.util import spec_from_loader
++else:
++    spec_from_loader = None
++
+ 
+ def _add_doc(func, doc):
+     """Add documentation to a function."""
+@@ -186,6 +191,11 @@
+             return self
+         return None
+ 
++    def find_spec(self, fullname, path, target=None):
++        if fullname in self.known_modules:
++            return spec_from_loader(fullname, self)
++        return None
++
+     def __get_module(self, fullname):
+         try:
+             return self.known_modules[fullname]
+@@ -223,6 +233,12 @@
+         return None
+     get_source = get_code  # same as get_code
+ 
++    def create_module(self, spec):
++        return self.load_module(spec.name)
++
++    def exec_module(self, module):
++        pass
++
+ _importer = _SixMetaPathImporter(__name__)
+ 
+ 
+@@ -241,12 +257,13 @@
+     MovedAttribute("map", "itertools", "builtins", "imap", "map"),
+     MovedAttribute("getcwd", "os", "os", "getcwdu", "getcwd"),
+     MovedAttribute("getcwdb", "os", "os", "getcwd", "getcwdb"),
++    MovedAttribute("getoutput", "commands", "subprocess"),
+     MovedAttribute("range", "__builtin__", "builtins", "xrange", "range"),
+     MovedAttribute("reload_module", "__builtin__", "importlib" if PY34 else "imp", "reload"),
+     MovedAttribute("reduce", "__builtin__", "functools"),
+     MovedAttribute("shlex_quote", "pipes", "shlex", "quote"),
+     MovedAttribute("StringIO", "StringIO", "io"),
+-    MovedAttribute("UserDict", "UserDict", "collections"),
++    MovedAttribute("UserDict", "UserDict", "collections", "IterableUserDict", "UserDict"),
+     MovedAttribute("UserList", "UserList", "collections"),
+     MovedAttribute("UserString", "UserString", "collections"),
+     MovedAttribute("xrange", "__builtin__", "builtins", "xrange", "range"),
+@@ -254,18 +271,21 @@
+     MovedAttribute("zip_longest", "itertools", "itertools", "izip_longest", "zip_longest"),
+     MovedModule("builtins", "__builtin__"),
+     MovedModule("configparser", "ConfigParser"),
++    MovedModule("collections_abc", "collections", "collections.abc" if sys.version_info >= (3, 3) else "collections"),
+     MovedModule("copyreg", "copy_reg"),
+     MovedModule("dbm_gnu", "gdbm", "dbm.gnu"),
+-    MovedModule("_dummy_thread", "dummy_thread", "_dummy_thread"),
++    MovedModule("dbm_ndbm", "dbm", "dbm.ndbm"),
++    MovedModule("_dummy_thread", "dummy_thread", "_dummy_thread" if sys.version_info < (3, 9) else "_thread"),
+     MovedModule("http_cookiejar", "cookielib", "http.cookiejar"),
+     MovedModule("http_cookies", "Cookie", "http.cookies"),
+     MovedModule("html_entities", "htmlentitydefs", "html.entities"),
+     MovedModule("html_parser", "HTMLParser", "html.parser"),
+     MovedModule("http_client", "httplib", "http.client"),
++    MovedModule("email_mime_base", "email.MIMEBase", "email.mime.base"),
++    MovedModule("email_mime_image", "email.MIMEImage", "email.mime.image"),
+     MovedModule("email_mime_multipart", "email.MIMEMultipart", "email.mime.multipart"),
+     MovedModule("email_mime_nonmultipart", "email.MIMENonMultipart", "email.mime.nonmultipart"),
+     MovedModule("email_mime_text", "email.MIMEText", "email.mime.text"),
+-    MovedModule("email_mime_base", "email.MIMEBase", "email.mime.base"),
+     MovedModule("BaseHTTPServer", "BaseHTTPServer", "http.server"),
+     MovedModule("CGIHTTPServer", "CGIHTTPServer", "http.server"),
+     MovedModule("SimpleHTTPServer", "SimpleHTTPServer", "http.server"),
+@@ -337,10 +357,12 @@
+     MovedAttribute("quote_plus", "urllib", "urllib.parse"),
+     MovedAttribute("unquote", "urllib", "urllib.parse"),
+     MovedAttribute("unquote_plus", "urllib", "urllib.parse"),
++    MovedAttribute("unquote_to_bytes", "urllib", "urllib.parse", "unquote", "unquote_to_bytes"),
+     MovedAttribute("urlencode", "urllib", "urllib.parse"),
+     MovedAttribute("splitquery", "urllib", "urllib.parse"),
+     MovedAttribute("splittag", "urllib", "urllib.parse"),
+     MovedAttribute("splituser", "urllib", "urllib.parse"),
++    MovedAttribute("splitvalue", "urllib", "urllib.parse"),
+     MovedAttribute("uses_fragment", "urlparse", "urllib.parse"),
+     MovedAttribute("uses_netloc", "urlparse", "urllib.parse"),
+     MovedAttribute("uses_params", "urlparse", "urllib.parse"),
+@@ -413,10 +435,17 @@
+     MovedAttribute("HTTPErrorProcessor", "urllib2", "urllib.request"),
+     MovedAttribute("urlretrieve", "urllib", "urllib.request"),
+     MovedAttribute("urlcleanup", "urllib", "urllib.request"),
+-    MovedAttribute("URLopener", "urllib", "urllib.request"),
+-    MovedAttribute("FancyURLopener", "urllib", "urllib.request"),
+     MovedAttribute("proxy_bypass", "urllib", "urllib.request"),
++    MovedAttribute("parse_http_list", "urllib2", "urllib.request"),
++    MovedAttribute("parse_keqv_list", "urllib2", "urllib.request"),
+ ]
++if sys.version_info[:2] < (3, 14):
++    _urllib_request_moved_attributes.extend(
++        [
++            MovedAttribute("URLopener", "urllib", "urllib.request"),
++            MovedAttribute("FancyURLopener", "urllib", "urllib.request"),
++        ]
++    )
+ for attr in _urllib_request_moved_attributes:
+     setattr(Module_six_moves_urllib_request, attr.name, attr)
+ del attr
+@@ -631,13 +660,16 @@
+     import io
+     StringIO = io.StringIO
+     BytesIO = io.BytesIO
++    del io
+     _assertCountEqual = "assertCountEqual"
+     if sys.version_info[1] <= 1:
+         _assertRaisesRegex = "assertRaisesRegexp"
+         _assertRegex = "assertRegexpMatches"
++        _assertNotRegex = "assertNotRegexpMatches"
+     else:
+         _assertRaisesRegex = "assertRaisesRegex"
+         _assertRegex = "assertRegex"
++        _assertNotRegex = "assertNotRegex"
+ else:
+     def b(s):
+         return s
+@@ -659,6 +691,7 @@
+     _assertCountEqual = "assertItemsEqual"
+     _assertRaisesRegex = "assertRaisesRegexp"
+     _assertRegex = "assertRegexpMatches"
++    _assertNotRegex = "assertNotRegexpMatches"
+ _add_doc(b, """Byte literal""")
+ _add_doc(u, """Text literal""")
+ 
+@@ -675,15 +708,23 @@
+     return getattr(self, _assertRegex)(*args, **kwargs)
+ 
+ 
++def assertNotRegex(self, *args, **kwargs):
++    return getattr(self, _assertNotRegex)(*args, **kwargs)
++
++
+ if PY3:
+     exec_ = getattr(moves.builtins, "exec")
+ 
+     def reraise(tp, value, tb=None):
+-        if value is None:
+-            value = tp()
+-        if value.__traceback__ is not tb:
+-            raise value.with_traceback(tb)
+-        raise value
++        try:
++            if value is None:
++                value = tp()
++            if value.__traceback__ is not tb:
++                raise value.with_traceback(tb)
++            raise value
++        finally:
++            value = None
++            tb = None
+ 
+ else:
+     def exec_(_code_, _globs_=None, _locs_=None):
+@@ -699,19 +740,19 @@
+         exec("""exec _code_ in _globs_, _locs_""")
+ 
+     exec_("""def reraise(tp, value, tb=None):
+-    raise tp, value, tb
++    try:
++        raise tp, value, tb
++    finally:
++        tb = None
+ """)
+ 
+ 
+-if sys.version_info[:2] == (3, 2):
+-    exec_("""def raise_from(value, from_value):
+-    if from_value is None:
+-        raise value
+-    raise value from from_value
+-""")
+-elif sys.version_info[:2] > (3, 2):
++if sys.version_info[:2] > (3,):
+     exec_("""def raise_from(value, from_value):
+-    raise value from from_value
++    try:
++        raise value from from_value
++    finally:
++        value = None
+ """)
+ else:
+     def raise_from(value, from_value):
+@@ -786,13 +827,33 @@
+ _add_doc(reraise, """Reraise an exception.""")
+ 
+ if sys.version_info[0:2] < (3, 4):
++    # This does exactly the same what the :func:`py3:functools.update_wrapper`
++    # function does on Python versions after 3.2. It sets the ``__wrapped__``
++    # attribute on ``wrapper`` object and it doesn't raise an error if any of
++    # the attributes mentioned in ``assigned`` and ``updated`` are missing on
++    # ``wrapped`` object.
++    def _update_wrapper(wrapper, wrapped,
++                        assigned=functools.WRAPPER_ASSIGNMENTS,
++                        updated=functools.WRAPPER_UPDATES):
++        for attr in assigned:
++            try:
++                value = getattr(wrapped, attr)
++            except AttributeError:
++                continue
++            else:
++                setattr(wrapper, attr, value)
++        for attr in updated:
++            getattr(wrapper, attr).update(getattr(wrapped, attr, {}))
++        wrapper.__wrapped__ = wrapped
++        return wrapper
++    _update_wrapper.__doc__ = functools.update_wrapper.__doc__
++
+     def wraps(wrapped, assigned=functools.WRAPPER_ASSIGNMENTS,
+               updated=functools.WRAPPER_UPDATES):
+-        def wrapper(f):
+-            f = functools.wraps(wrapped, assigned, updated)(f)
+-            f.__wrapped__ = wrapped
+-            return f
+-        return wrapper
++        return functools.partial(_update_wrapper, wrapped=wrapped,
++                                 assigned=assigned, updated=updated)
++    wraps.__doc__ = functools.wraps.__doc__
++
+ else:
+     wraps = functools.wraps
+ 
+@@ -802,10 +863,22 @@
+     # This requires a bit of explanation: the basic idea is to make a dummy
+     # metaclass for one level of class instantiation that replaces itself with
+     # the actual metaclass.
+-    class metaclass(meta):
++    class metaclass(type):
+ 
+         def __new__(cls, name, this_bases, d):
+-            return meta(name, bases, d)
++            if sys.version_info[:2] >= (3, 7):
++                # This version introduced PEP 560 that requires a bit
++                # of extra care (we mimic what is done by __build_class__).
++                resolved_bases = types.resolve_bases(bases)
++                if resolved_bases is not bases:
++                    d['__orig_bases__'] = bases
++            else:
++                resolved_bases = bases
++            return meta(name, resolved_bases, d)
++
++        @classmethod
++        def __prepare__(cls, name, this_bases):
++            return meta.__prepare__(name, bases)
+     return type.__new__(metaclass, 'temporary_class', (), {})
+ 
+ 
+@@ -821,13 +894,75 @@
+                 orig_vars.pop(slots_var)
+         orig_vars.pop('__dict__', None)
+         orig_vars.pop('__weakref__', None)
++        if hasattr(cls, '__qualname__'):
++            orig_vars['__qualname__'] = cls.__qualname__
+         return metaclass(cls.__name__, cls.__bases__, orig_vars)
+     return wrapper
+ 
+ 
++def ensure_binary(s, encoding='utf-8', errors='strict'):
++    """Coerce **s** to six.binary_type.
++
++    For Python 2:
++      - `unicode` -> encoded to `str`
++      - `str` -> `str`
++
++    For Python 3:
++      - `str` -> encoded to `bytes`
++      - `bytes` -> `bytes`
++    """
++    if isinstance(s, binary_type):
++        return s
++    if isinstance(s, text_type):
++        return s.encode(encoding, errors)
++    raise TypeError("not expecting type '%s'" % type(s))
++
++
++def ensure_str(s, encoding='utf-8', errors='strict'):
++    """Coerce *s* to `str`.
++
++    For Python 2:
++      - `unicode` -> encoded to `str`
++      - `str` -> `str`
++
++    For Python 3:
++      - `str` -> `str`
++      - `bytes` -> decoded to `str`
++    """
++    # Optimization: Fast return for the common case.
++    if type(s) is str:
++        return s
++    if PY2 and isinstance(s, text_type):
++        return s.encode(encoding, errors)
++    elif PY3 and isinstance(s, binary_type):
++        return s.decode(encoding, errors)
++    elif not isinstance(s, (text_type, binary_type)):
++        raise TypeError("not expecting type '%s'" % type(s))
++    return s
++
++
++def ensure_text(s, encoding='utf-8', errors='strict'):
++    """Coerce *s* to six.text_type.
++
++    For Python 2:
++      - `unicode` -> `unicode`
++      - `str` -> `unicode`
++
++    For Python 3:
++      - `str` -> `str`
++      - `bytes` -> decoded to `str`
++    """
++    if isinstance(s, binary_type):
++        return s.decode(encoding, errors)
++    elif isinstance(s, text_type):
++        return s
++    else:
++        raise TypeError("not expecting type '%s'" % type(s))
++
++
+ def python_2_unicode_compatible(klass):
+     """
+-    A decorator that defines __unicode__ and __str__ methods under Python 2.
++    A class decorator that defines __unicode__ and __str__ methods under Python 2.
+     Under Python 3 it does nothing.
+ 
+     To support Python 2 and 3 with a single code base, define a __str__ method
+diff '--color=auto' -ruN '--exclude=.git' '--exclude=currentscore.csv' a/SA-ctf_scoreboard/bin/sa_ctf_scoreboard/splunklib/six.py b/SA-ctf_scoreboard/bin/sa_ctf_scoreboard/splunklib/six.py
+--- a/SA-ctf_scoreboard/bin/sa_ctf_scoreboard/splunklib/six.py	2026-10-05 21:47:28.348940155 +0100
++++ b/SA-ctf_scoreboard/bin/sa_ctf_scoreboard/splunklib/six.py	2026-09-30 22:55:48.762687989 +0100
+@@ -1,4 +1,4 @@
+-# Copyright (c) 2010-2020 Benjamin Peterson
++# Copyright (c) 2010-2024 Benjamin Peterson
+ #
+ # Permission is hereby granted, free of charge, to any person obtaining a copy
+ # of this software and associated documentation files (the "Software"), to deal
+@@ -29,7 +29,7 @@
+ import types
+ 
+ __author__ = "Benjamin Peterson <benjamin@python.org>"
+-__version__ = "1.14.0"
++__version__ = "1.17.0"
+ 
+ 
+ # Useful for very coarse version differentiation.
+@@ -71,6 +71,11 @@
+             MAXSIZE = int((1 << 63) - 1)
+         del X
+ 
++if PY34:
++    from importlib.util import spec_from_loader
++else:
++    spec_from_loader = None
++
+ 
+ def _add_doc(func, doc):
+     """Add documentation to a function."""
+@@ -186,6 +191,11 @@
+             return self
+         return None
+ 
++    def find_spec(self, fullname, path, target=None):
++        if fullname in self.known_modules:
++            return spec_from_loader(fullname, self)
++        return None
++
+     def __get_module(self, fullname):
+         try:
+             return self.known_modules[fullname]
+@@ -223,6 +233,12 @@
+         return None
+     get_source = get_code  # same as get_code
+ 
++    def create_module(self, spec):
++        return self.load_module(spec.name)
++
++    def exec_module(self, module):
++        pass
++
+ _importer = _SixMetaPathImporter(__name__)
+ 
+ 
+@@ -247,7 +263,7 @@
+     MovedAttribute("reduce", "__builtin__", "functools"),
+     MovedAttribute("shlex_quote", "pipes", "shlex", "quote"),
+     MovedAttribute("StringIO", "StringIO", "io"),
+-    MovedAttribute("UserDict", "UserDict", "collections"),
++    MovedAttribute("UserDict", "UserDict", "collections", "IterableUserDict", "UserDict"),
+     MovedAttribute("UserList", "UserList", "collections"),
+     MovedAttribute("UserString", "UserString", "collections"),
+     MovedAttribute("xrange", "__builtin__", "builtins", "xrange", "range"),
+@@ -419,12 +435,17 @@
+     MovedAttribute("HTTPErrorProcessor", "urllib2", "urllib.request"),
+     MovedAttribute("urlretrieve", "urllib", "urllib.request"),
+     MovedAttribute("urlcleanup", "urllib", "urllib.request"),
+-    MovedAttribute("URLopener", "urllib", "urllib.request"),
+-    MovedAttribute("FancyURLopener", "urllib", "urllib.request"),
+     MovedAttribute("proxy_bypass", "urllib", "urllib.request"),
+     MovedAttribute("parse_http_list", "urllib2", "urllib.request"),
+     MovedAttribute("parse_keqv_list", "urllib2", "urllib.request"),
+ ]
++if sys.version_info[:2] < (3, 14):
++    _urllib_request_moved_attributes.extend(
++        [
++            MovedAttribute("URLopener", "urllib", "urllib.request"),
++            MovedAttribute("FancyURLopener", "urllib", "urllib.request"),
++        ]
++    )
+ for attr in _urllib_request_moved_attributes:
+     setattr(Module_six_moves_urllib_request, attr.name, attr)
+ del attr
+@@ -890,12 +911,11 @@
+       - `str` -> encoded to `bytes`
+       - `bytes` -> `bytes`
+     """
++    if isinstance(s, binary_type):
++        return s
+     if isinstance(s, text_type):
+         return s.encode(encoding, errors)
+-    elif isinstance(s, binary_type):
+-        return s
+-    else:
+-        raise TypeError("not expecting type '%s'" % type(s))
++    raise TypeError("not expecting type '%s'" % type(s))
+ 
+ 
+ def ensure_str(s, encoding='utf-8', errors='strict'):
+@@ -909,12 +929,15 @@
+       - `str` -> `str`
+       - `bytes` -> decoded to `str`
+     """
+-    if not isinstance(s, (text_type, binary_type)):
+-        raise TypeError("not expecting type '%s'" % type(s))
++    # Optimization: Fast return for the common case.
++    if type(s) is str:
++        return s
+     if PY2 and isinstance(s, text_type):
+-        s = s.encode(encoding, errors)
++        return s.encode(encoding, errors)
+     elif PY3 and isinstance(s, binary_type):
+-        s = s.decode(encoding, errors)
++        return s.decode(encoding, errors)
++    elif not isinstance(s, (text_type, binary_type)):
++        raise TypeError("not expecting type '%s'" % type(s))
+     return s
+ 
+ 
+diff '--color=auto' -ruN '--exclude=.git' '--exclude=currentscore.csv' a/SA-ctf_scoreboard/bin/splunklib/six.py b/SA-ctf_scoreboard/bin/splunklib/six.py
+--- a/SA-ctf_scoreboard/bin/splunklib/six.py	2026-10-05 21:47:28.350497730 +0100
++++ b/SA-ctf_scoreboard/bin/splunklib/six.py	2026-09-30 22:55:48.746013223 +0100
+@@ -1,4 +1,4 @@
+-# Copyright (c) 2010-2020 Benjamin Peterson
++# Copyright (c) 2010-2024 Benjamin Peterson
+ #
+ # Permission is hereby granted, free of charge, to any person obtaining a copy
+ # of this software and associated documentation files (the "Software"), to deal
+@@ -29,7 +29,7 @@
+ import types
+ 
+ __author__ = "Benjamin Peterson <benjamin@python.org>"
+-__version__ = "1.14.0"
++__version__ = "1.17.0"
+ 
+ 
+ # Useful for very coarse version differentiation.
+@@ -71,6 +71,11 @@
+             MAXSIZE = int((1 << 63) - 1)
+         del X
+ 
++if PY34:
++    from importlib.util import spec_from_loader
++else:
++    spec_from_loader = None
++
+ 
+ def _add_doc(func, doc):
+     """Add documentation to a function."""
+@@ -186,6 +191,11 @@
+             return self
+         return None
+ 
++    def find_spec(self, fullname, path, target=None):
++        if fullname in self.known_modules:
++            return spec_from_loader(fullname, self)
++        return None
++
+     def __get_module(self, fullname):
+         try:
+             return self.known_modules[fullname]
+@@ -223,6 +233,12 @@
+         return None
+     get_source = get_code  # same as get_code
+ 
++    def create_module(self, spec):
++        return self.load_module(spec.name)
++
++    def exec_module(self, module):
++        pass
++
+ _importer = _SixMetaPathImporter(__name__)
+ 
+ 
+@@ -247,7 +263,7 @@
+     MovedAttribute("reduce", "__builtin__", "functools"),
+     MovedAttribute("shlex_quote", "pipes", "shlex", "quote"),
+     MovedAttribute("StringIO", "StringIO", "io"),
+-    MovedAttribute("UserDict", "UserDict", "collections"),
++    MovedAttribute("UserDict", "UserDict", "collections", "IterableUserDict", "UserDict"),
+     MovedAttribute("UserList", "UserList", "collections"),
+     MovedAttribute("UserString", "UserString", "collections"),
+     MovedAttribute("xrange", "__builtin__", "builtins", "xrange", "range"),
+@@ -419,12 +435,17 @@
+     MovedAttribute("HTTPErrorProcessor", "urllib2", "urllib.request"),
+     MovedAttribute("urlretrieve", "urllib", "urllib.request"),
+     MovedAttribute("urlcleanup", "urllib", "urllib.request"),
+-    MovedAttribute("URLopener", "urllib", "urllib.request"),
+-    MovedAttribute("FancyURLopener", "urllib", "urllib.request"),
+     MovedAttribute("proxy_bypass", "urllib", "urllib.request"),
+     MovedAttribute("parse_http_list", "urllib2", "urllib.request"),
+     MovedAttribute("parse_keqv_list", "urllib2", "urllib.request"),
+ ]
++if sys.version_info[:2] < (3, 14):
++    _urllib_request_moved_attributes.extend(
++        [
++            MovedAttribute("URLopener", "urllib", "urllib.request"),
++            MovedAttribute("FancyURLopener", "urllib", "urllib.request"),
++        ]
++    )
+ for attr in _urllib_request_moved_attributes:
+     setattr(Module_six_moves_urllib_request, attr.name, attr)
+ del attr
+@@ -890,12 +911,11 @@
+       - `str` -> encoded to `bytes`
+       - `bytes` -> `bytes`
+     """
++    if isinstance(s, binary_type):
++        return s
+     if isinstance(s, text_type):
+         return s.encode(encoding, errors)
+-    elif isinstance(s, binary_type):
+-        return s
+-    else:
+-        raise TypeError("not expecting type '%s'" % type(s))
++    raise TypeError("not expecting type '%s'" % type(s))
+ 
+ 
+ def ensure_str(s, encoding='utf-8', errors='strict'):
+@@ -909,12 +929,15 @@
+       - `str` -> `str`
+       - `bytes` -> decoded to `str`
+     """
+-    if not isinstance(s, (text_type, binary_type)):
+-        raise TypeError("not expecting type '%s'" % type(s))
++    # Optimization: Fast return for the common case.
++    if type(s) is str:
++        return s
+     if PY2 and isinstance(s, text_type):
+-        s = s.encode(encoding, errors)
++        return s.encode(encoding, errors)
+     elif PY3 and isinstance(s, binary_type):
+-        s = s.decode(encoding, errors)
++        return s.decode(encoding, errors)
++    elif not isinstance(s, (text_type, binary_type)):
++        raise TypeError("not expecting type '%s'" % type(s))
+     return s
+ 
+ 
+diff '--color=auto' -ruN '--exclude=.git' '--exclude=currentscore.csv' a/SA-ctf_scoreboard/local/app.conf b/SA-ctf_scoreboard/local/app.conf
+--- a/SA-ctf_scoreboard/local/app.conf	1970-01-01 01:00:00.000000000 +0100
++++ b/SA-ctf_scoreboard/local/app.conf	2026-09-30 22:48:45.468466653 +0100
+@@ -0,0 +1,2 @@
++[install]
++build = 1001
+diff '--color=auto' -ruN '--exclude=.git' '--exclude=currentscore.csv' a/SA-ctf_scoreboard/local/data/ui/views/all_ebadges.xml b/SA-ctf_scoreboard/local/data/ui/views/all_ebadges.xml
+--- a/SA-ctf_scoreboard/local/data/ui/views/all_ebadges.xml	1970-01-01 01:00:00.000000000 +0100
++++ b/SA-ctf_scoreboard/local/data/ui/views/all_ebadges.xml	2026-09-30 22:45:08.512889424 +0100
+@@ -0,0 +1,22 @@
++<dashboard version="1.1" script="all_ebadges.js" stylesheet="all_ebadges.css" hideEdit="True" theme="dark" >
++  <label>eBadge Descriptions</label>
++  <row>
++    <panel>
++      <table id="badge_table">
++        <search>
++          <query>| inputlookup ctf_badges | table BadgeNumber, BadgeURL,  BadgeName, BadgeDescription | fields - BadgeNumber</query>
++          <earliest>-24h@h</earliest>
++          <latest>now</latest>
++          <sampleRatio>1</sampleRatio>
++        </search>
++        <option name="count">100</option>
++        <option name="dataOverlayMode">none</option>
++        <option name="drilldown">none</option>
++        <option name="percentagesRow">false</option>
++        <option name="rowNumbers">false</option>
++        <option name="totalsRow">false</option>
++        <option name="wrap">true</option>
++      </table>
++    </panel>
++  </row>
++</dashboard>
+diff '--color=auto' -ruN '--exclude=.git' '--exclude=currentscore.csv' a/SA-ctf_scoreboard/local/data/ui/views/AllScores_global.xml b/SA-ctf_scoreboard/local/data/ui/views/AllScores_global.xml
+--- a/SA-ctf_scoreboard/local/data/ui/views/AllScores_global.xml	1970-01-01 01:00:00.000000000 +0100
++++ b/SA-ctf_scoreboard/local/data/ui/views/AllScores_global.xml	2026-09-30 22:45:08.512686385 +0100
+@@ -0,0 +1,40 @@
++<dashboard version="1.1" hideTitle="True" theme="dark" stylesheet="AllScores.css">
++  <label>All Teams Scores (Event-Wide)</label>
++  <row>
++    <panel>
++      <html>
++      
++        <title>All Team Scores (Event-Wide)</title>
++        
++        <img src="/static/app/SA-ctf_scoreboard/ctflogo.png" width="100" align="left" hspace="20"/>
++      
++        <h1 style="font-size:40pt;text-align:center;position:absolute;top:50%;left:50%;transform:translateX(-50%)translateY(-50%);">
++          All Team Scores (Event-Wide)
++        </h1>
++        <text style="font-size:10pt;text-align:center;position:absolute;top:90%;left:50%;transform:translateX(-50%)translateY(-50%);"> Results may be delayed up to two minutes. </text>
++
++        <br/>
++
++ 
++
++      </html>
++    </panel>
++  </row>
++  <row>
++    <panel>
++      <table>
++        <search>
++          <query>
++          
++| inputlookup rankings.csv 
++| table "Rank: Team" Score</query>
++        </search>
++        <option name="count">25</option>
++        <option name="dataOverlayMode">none</option>
++        <option name="drilldown">none</option>
++        <option name="rowNumbers">false</option>
++        <option name="wrap">true</option>
++      </table>
++    </panel>
++  </row>
++</dashboard>
+\ No newline at end of file
+diff '--color=auto' -ruN '--exclude=.git' '--exclude=currentscore.csv' a/SA-ctf_scoreboard/local/data/ui/views/AllScores.xml b/SA-ctf_scoreboard/local/data/ui/views/AllScores.xml
+--- a/SA-ctf_scoreboard/local/data/ui/views/AllScores.xml	1970-01-01 01:00:00.000000000 +0100
++++ b/SA-ctf_scoreboard/local/data/ui/views/AllScores.xml	2026-09-30 22:45:08.512373785 +0100
+@@ -0,0 +1,252 @@
++<dashboard version="1.1" hideTitle="True" theme="dark" stylesheet="AllScores.css">
++  <label>All Teams Scores</label>
++  <search id="base" ref="Score-Base"></search>
++  <search base="base" id="secondary">
++    <query>eval panel = floor((currentcount / totalcount) * 12)
++| fields Rank Team Score panel</query>
++  </search>
++  <row>
++    <panel>
++      <html>
++      
++        <title>All Team Scores</title>
++        
++        <img src="/static/app/SA-ctf_scoreboard/ctflogo.png" width="100" align="left" hspace="20"/>
++      
++        <h1 style="font-size:50pt;text-align:center;position:absolute;top:50%;left:50%;transform:translateX(-50%)translateY(-50%);">
++          All Team Scores
++        </h1>
++        <br/>
++
++ 
++
++      </html>
++    </panel>
++  </row>
++  <row>
++    <panel>
++      <table>
++        <search base="secondary">
++          <query>
++          
++| fields Rank Team Score panel | where panel=0 
++| eval RankText="# " . Rank . ": " 
++| eval RankbyTeam=RankText . Team 
++| table RankbyTeam Score 
++| rename RankbyTeam AS "Rank: Team"</query>
++        </search>
++        <option name="count">30</option>
++        <option name="dataOverlayMode">none</option>
++        <option name="drilldown">none</option>
++        <option name="rowNumbers">false</option>
++        <option name="wrap">true</option>
++      </table>
++    </panel>
++        <panel>
++      <table>
++        <search base="secondary">
++          <query>
++          
++| fields Rank Team Score panel | where panel=1
++| eval RankText="# " . Rank . ": " 
++| eval RankbyTeam=RankText . Team 
++| table RankbyTeam Score 
++| rename RankbyTeam AS "Rank: Team"</query>
++        </search>
++        <option name="count">30</option>
++        <option name="dataOverlayMode">none</option>
++        <option name="drilldown">none</option>
++        <option name="rowNumbers">false</option>
++        <option name="wrap">true</option>
++      </table>
++    </panel>
++        <panel>
++      <table>
++        <search base="secondary">
++          <query>
++          
++| fields Rank Team Score panel | where panel=2
++| eval RankText="# " . Rank . ": " 
++| eval RankbyTeam=RankText . Team 
++| table RankbyTeam Score 
++| rename RankbyTeam AS "Rank: Team"</query>
++        </search>
++        <option name="count">30</option>
++        <option name="dataOverlayMode">none</option>
++        <option name="drilldown">none</option>
++        <option name="rowNumbers">false</option>
++        <option name="wrap">true</option>
++      </table>
++    </panel>
++  </row>
++  
++    <row>
++    <panel>
++      <table>
++        <search base="secondary">
++          <query>
++          
++| fields Rank Team Score panel | where panel=3
++| eval RankText="# " . Rank . ": " 
++| eval RankbyTeam=RankText . Team 
++| table RankbyTeam Score 
++| rename RankbyTeam AS "Rank: Team"</query>
++        </search>
++        <option name="count">30</option>
++        <option name="dataOverlayMode">none</option>
++        <option name="drilldown">none</option>
++        <option name="rowNumbers">false</option>
++        <option name="wrap">true</option>
++      </table>
++    </panel>
++        <panel>
++      <table>
++        <search base="secondary">
++          <query>
++          
++| fields Rank Team Score panel | where panel=4
++| eval RankText="# " . Rank . ": " 
++| eval RankbyTeam=RankText . Team 
++| table RankbyTeam Score 
++| rename RankbyTeam AS "Rank: Team"</query>
++        </search>
++        <option name="count">30</option>
++        <option name="dataOverlayMode">none</option>
++        <option name="drilldown">none</option>
++        <option name="rowNumbers">false</option>
++        <option name="wrap">true</option>
++      </table>
++    </panel>
++        <panel>
++      <table>
++        <search base="secondary">
++          <query>
++          
++| fields Rank Team Score panel | where panel=5
++| eval RankText="# " . Rank . ": " 
++| eval RankbyTeam=RankText . Team 
++| table RankbyTeam Score 
++| rename RankbyTeam AS "Rank: Team"</query>
++        </search>
++        <option name="count">30</option>
++        <option name="dataOverlayMode">none</option>
++        <option name="drilldown">none</option>
++        <option name="rowNumbers">false</option>
++        <option name="wrap">true</option>
++      </table>
++    </panel>
++  </row>
++  
++      <row>
++    <panel>
++      <table>
++        <search base="secondary">
++          <query>
++          
++| fields Rank Team Score panel | where panel=6
++| eval RankText="# " . Rank . ": " 
++| eval RankbyTeam=RankText . Team 
++| table RankbyTeam Score 
++| rename RankbyTeam AS "Rank: Team"</query>
++        </search>
++        <option name="count">30</option>
++        <option name="dataOverlayMode">none</option>
++        <option name="drilldown">none</option>
++        <option name="rowNumbers">false</option>
++        <option name="wrap">true</option>
++      </table>
++    </panel>
++        <panel>
++      <table>
++        <search base="secondary">
++          <query>
++          
++| fields Rank Team Score panel | where panel=7
++| eval RankText="# " . Rank . ": " 
++| eval RankbyTeam=RankText . Team 
++| table RankbyTeam Score 
++| rename RankbyTeam AS "Rank: Team"</query>
++        </search>
++        <option name="count">30</option>
++        <option name="dataOverlayMode">none</option>
++        <option name="drilldown">none</option>
++        <option name="rowNumbers">false</option>
++        <option name="wrap">true</option>
++      </table>
++    </panel>
++        <panel>
++      <table>
++        <search base="secondary">
++          <query>
++          
++| fields Rank Team Score panel | where panel=8
++| eval RankText="# " . Rank . ": " 
++| eval RankbyTeam=RankText . Team 
++| table RankbyTeam Score 
++| rename RankbyTeam AS "Rank: Team"</query>
++        </search>
++        <option name="count">30</option>
++        <option name="dataOverlayMode">none</option>
++        <option name="drilldown">none</option>
++        <option name="rowNumbers">false</option>
++        <option name="wrap">true</option>
++      </table>
++    </panel>
++  </row>
++      <row>
++    <panel>
++      <table>
++        <search base="secondary">
++          <query>
++          
++| fields Rank Team Score panel | where panel=9
++| eval RankText="# " . Rank . ": " 
++| eval RankbyTeam=RankText . Team 
++| table RankbyTeam Score 
++| rename RankbyTeam AS "Rank: Team"</query>
++        </search>
++        <option name="count">30</option>
++        <option name="dataOverlayMode">none</option>
++        <option name="drilldown">none</option>
++        <option name="rowNumbers">false</option>
++        <option name="wrap">true</option>
++      </table>
++    </panel>
++        <panel>
++      <table>
++        <search base="secondary">
++          <query>
++          
++| fields Rank Team Score panel | where panel=10
++| eval RankText="# " . Rank . ": " 
++| eval RankbyTeam=RankText . Team 
++| table RankbyTeam Score 
++| rename RankbyTeam AS "Rank: Team"</query>
++        </search>
++        <option name="count">30</option>
++        <option name="dataOverlayMode">none</option>
++        <option name="drilldown">none</option>
++        <option name="rowNumbers">false</option>
++        <option name="wrap">true</option>
++      </table>
++    </panel>
++        <panel>
++      <table>
++        <search base="secondary">
++          <query>
++          
++| fields Rank Team Score panel | where panel=11
++| eval RankText="# " . Rank . ": " 
++| eval RankbyTeam=RankText . Team 
++| table RankbyTeam Score 
++| rename RankbyTeam AS "Rank: Team"</query>
++        </search>
++        <option name="count">30</option>
++        <option name="dataOverlayMode">none</option>
++        <option name="drilldown">none</option>
++        <option name="rowNumbers">false</option>
++        <option name="wrap">true</option>
++      </table>
++    </panel>
++  </row>
++</dashboard>
+\ No newline at end of file
+diff '--color=auto' -ruN '--exclude=.git' '--exclude=currentscore.csv' a/SA-ctf_scoreboard/local/data/ui/views/ebadge_recipients.xml b/SA-ctf_scoreboard/local/data/ui/views/ebadge_recipients.xml
+--- a/SA-ctf_scoreboard/local/data/ui/views/ebadge_recipients.xml	1970-01-01 01:00:00.000000000 +0100
++++ b/SA-ctf_scoreboard/local/data/ui/views/ebadge_recipients.xml	2026-09-30 22:45:08.513122474 +0100
+@@ -0,0 +1,33 @@
++<dashboard version="1.1" script="all_ebadges.js" stylesheet="all_ebadges.css" hideEdit="True" theme="dark" >
++  <label>eBadge Recipients</label>
++  <row>
++    <panel>
++      <table id="badge_table">
++        <search>
++          <query>| inputlookup ctf_badges 
++| lookup ctf_badge_entitlements BadgeNumber 
++| eval user=if(isnull(user),"None",user) 
++| mvexpand user `get_user_info` 
++| eval user=if(isnull(StealthModeTeam),user, "Member of ".StealthModeTeam) 
++| eval DisplayUsername=if(isnull(StealthModeTeam),DisplayUsername, "Member of ".StealthModeTeam) 
++| stats values(Team) as Teams values(DisplayUsername) as Users by BadgeNumber BadgeURL BadgeName BadgeDescription 
++| eval BadgeURL=mvjoin(BadgeURL, ",") 
++| sort BadgeNumber 
++| fields - BadgeNumber 
++| eval Teams=mvindex(Teams, 0, 10) 
++| eval Users=mvindex(Users, 0, 10)</query>
++                           <earliest>0</earliest>
++          <latest>now</latest>
++          <sampleRatio>1</sampleRatio>
++        </search>
++        <option name="count">100</option>
++        <option name="dataOverlayMode">none</option>
++        <option name="drilldown">none</option>
++        <option name="percentagesRow">false</option>
++        <option name="rowNumbers">false</option>
++        <option name="totalsRow">false</option>
++        <option name="wrap">true</option>
++      </table>
++    </panel>
++  </row>
++</dashboard>
+diff '--color=auto' -ruN '--exclude=.git' '--exclude=currentscore.csv' a/SA-ctf_scoreboard/local/data/ui/views/ebadges_by_team.xml b/SA-ctf_scoreboard/local/data/ui/views/ebadges_by_team.xml
+--- a/SA-ctf_scoreboard/local/data/ui/views/ebadges_by_team.xml	1970-01-01 01:00:00.000000000 +0100
++++ b/SA-ctf_scoreboard/local/data/ui/views/ebadges_by_team.xml	2026-09-30 22:45:08.513335724 +0100
+@@ -0,0 +1,27 @@
++<dashboard version="1.1" script="all_ebadges.js" stylesheet="all_ebadges.css" hideEdit="True" theme="dark" >
++  <label>eBadges by Team</label>
++  <row>
++    <panel>
++      <table id="badge_table">
++        <search>
++          <query>| inputlookup ctf_badge_entitlements 
++| lookup ctf_badges BadgeNumber 
++| search `get_user_info` 
++| stats dc(BadgeNumber) as "Unique Count" values(BadgeURL) as BadgeURL by Team 
++| eval BadgeURL=mvjoin(BadgeURL, ",") 
++| sort - "Unique Count"</query>
++          <earliest>0</earliest>
++          <latest>now</latest>
++          <sampleRatio>1</sampleRatio>
++        </search>
++        <option name="count">100</option>
++        <option name="dataOverlayMode">none</option>
++        <option name="drilldown">none</option>
++        <option name="percentagesRow">false</option>
++        <option name="rowNumbers">false</option>
++        <option name="totalsRow">false</option>
++        <option name="wrap">true</option>
++      </table>
++    </panel>
++  </row>
++</dashboard>
+diff '--color=auto' -ruN '--exclude=.git' '--exclude=currentscore.csv' a/SA-ctf_scoreboard/local/data/ui/views/event_activity.xml b/SA-ctf_scoreboard/local/data/ui/views/event_activity.xml
+--- a/SA-ctf_scoreboard/local/data/ui/views/event_activity.xml	1970-01-01 01:00:00.000000000 +0100
++++ b/SA-ctf_scoreboard/local/data/ui/views/event_activity.xml	2026-09-30 22:45:08.513751993 +0100
+@@ -0,0 +1,127 @@
++<dashboard version="1.1" hideTitle="true" theme="dark" stylesheet="event_activity.css">
++  <label>Event Activity</label>
++  <row>
++    <panel>
++      <html>
++      
++        <title>Event Activity</title>
++        <div>
++          <img style="height: 100px;" src="/static/app/SA-ctf_scoreboard/ctflogo.png"/>
++          <h1 style="font-size:36pt;text-align:center;position:absolute;top:50%;left:50%;transform:translateX(-50%)translateY(-50%);">
++		      Event Activity
++          </h1>
++        </div>
++      </html>
++    </panel>
++  </row>
++  <row>
++    <panel>
++      <html>
++          <style>
++            #mostactive .single-value .single-result {
++              font-size: 50px !important;
++              min-height: 100px;
++            }
++          </style>
++        </html>
++      <single id="mostactive">
++        <search>
++          <query>index=scoreboard Result=* user!=admin `get_user_info`  | top limit=1 Team</query>
++          <earliest>0</earliest>
++          <latest></latest>
++        </search>
++        <option name="drilldown">none</option>
++        <option name="colorBy">value</option>
++        <option name="colorMode">block</option>
++        <option name="numberPrecision">0</option>
++        <option name="showSparkline">1</option>
++        <option name="showTrendIndicator">1</option>
++        <option name="trendColorInterpretation">standard</option>
++        <option name="trendDisplayMode">absolute</option>
++        <option name="unitPosition">after</option>
++        <option name="useColors">1</option>
++        <option name="useThousandSeparators">1</option>
++        <option name="rangeColors">["0x65a637","0x6db7c6","0xf7bc38","0xf58f39","0xd93f3c"]</option>
++        <option name="rangeValues">[0,30,70,100]</option>
++        <option name="underLabel">Most active team overall</option>
++      </single>
++    </panel>
++    <panel>
++      <html>
++          <style>
++            #mostactive60 .single-value .single-result {
++              font-size: 50px !important;
++              min-height: 100px;
++            }
++          </style>
++        </html>
++      <single id="mostactive60">
++        <search>
++          <query>
++index=scoreboard Result=* user!=admin `get_user_info` 
++| append [ | stats count | fields - count | eval Team="No recent activity." ] | top limit=1 Team</query>
++          <earliest>-60m</earliest>
++          <latest></latest>
++        </search>
++        <option name="drilldown">none</option>
++        <option name="colorBy">value</option>
++        <option name="colorMode">block</option>
++        <option name="numberPrecision">0</option>
++        <option name="showSparkline">1</option>
++        <option name="showTrendIndicator">1</option>
++        <option name="trendColorInterpretation">standard</option>
++        <option name="trendDisplayMode">absolute</option>
++        <option name="unitPosition">after</option>
++        <option name="useColors">1</option>
++        <option name="useThousandSeparators">1</option>
++        <option name="rangeColors">["0x65a637","0x6db7c6","0xf7bc38","0xf58f39","0xd93f3c"]</option>
++        <option name="rangeValues">[0,30,70,100]</option>
++        <option name="underLabel">Most active team last 60 minutes</option>
++      </single>
++    </panel>
++  </row>
++  <row>
++    <panel>
++      <table>
++        <title>Most Recent Activity</title>
++        <search>
++          <query>index=scoreboard Result=* user!=admin `get_user_info` 
++| rename BasePointsAwarded as Points 
++| rename SpeedBonusAwarded as Bonus 
++| eval "Additional Bonus" = AdditionalBonusAwarded 
++| rename DisplayUsername as User 
++| lookup ctf_badges BadgeNumber as BadgeNumber 
++| eval Type = case(
++    Result=="Correct" OR Result=="Incorrect", "Answer Submitted", 
++    Result=="Hint", "Hint Purchased", 
++    Result=="Badge", "Badge Received", 
++    Result="Bonus", "Additional Bonus") 
++| eval "Details" = case(
++    Result=="Correct" OR Result=="Incorrect", QuestionOfficial, 
++    Result=="Hint", "We can't put that here, silly!", 
++    Result=="Badge", BadgeDescription, 
++    Result="Bonus", "Wouldn't you like to know?") 
++| sort - _time 
++| convert timeformat="%a %H:%M" ctime(_time) 
++| rename _time as "Date/Time" 
++| rename QuestionOfficial as Question 
++| eval Points = coalesce(Points, 0) 
++| eval Bonus = coalesce(Bonus, 0) 
++| eval "Additional Bonus" = coalesce(AdditionalBonusAwarded, 0) 
++| eval Penalty = coalesce(Penalty, 0) 
++| eval suffix=if(len(Details) &gt; 50, "...", "")
++| eval Details=substr(Details, 1, 50).suffix
++| table "Date/Time" Team Type Number Details Result Points Bonus "Additional Bonus" Penalty</query>
++          <earliest>0</earliest>
++          <latest></latest>
++        </search>
++        <option name="count">15</option>
++        <option name="dataOverlayMode">none</option>
++        <option name="drilldown">none</option>
++        <option name="refresh.display">progressbar</option>
++        <option name="rowNumbers">false</option>
++        <option name="wrap">true</option>
++      </table>
++    </panel>
++  </row>
++</dashboard>
+\ No newline at end of file
+diff '--color=auto' -ruN '--exclude=.git' '--exclude=currentscore.csv' a/SA-ctf_scoreboard/local/data/ui/views/questions.xml b/SA-ctf_scoreboard/local/data/ui/views/questions.xml
+--- a/SA-ctf_scoreboard/local/data/ui/views/questions.xml	1970-01-01 01:00:00.000000000 +0100
++++ b/SA-ctf_scoreboard/local/data/ui/views/questions.xml	2026-09-30 22:45:08.514761242 +0100
+@@ -0,0 +1,151 @@
++<dashboard version="1.1" script="table_icons_inline.js, custom_table_row_expansion.js, instantiate_countdown.js" stylesheet="table_decorations.css, questions.css" hideEdit="True" theme="dark">
++  <label>Questions</label>
++  <row>
++    <panel>
++      <html>
++        <div id="logodiv">
++            <img id="ctflogo" src="/static/app/SA-ctf_scoreboard/ctflogo.png"/>
++        </div>
++      </html>
++    </panel>
++    <panel>
++      <html>
++        <style>
++            .panel-body{
++                 background-color:#31373e !important;
++             }
++             .dashboard-panel{
++                 background-color:#31373e !important;
++             }
++        </style>        
++          <h3 class="section-heading">User and Team Information</h3>
++          <table border="0">
++            <tr>
++              <td style="font-size: 12px; padding: 5px;">User</td>
++              <td style="font-size: 18px; font-weight: bold; padding: 5px;">$ctf_DisplayUsername$ ($ctf_user$)</td>
++            </tr>
++            <tr>
++              <td style="font-size: 12px; padding: 5px;">Team Name</td>
++              <td style="font-size: 18px; font-weight: bold; padding: 5px;">$ctf_Team$ </td>
++            </tr>
++            <tr>
++              <td style="font-size: 12px; padding: 5px;">Teammates</td>
++              <td style="font-size: 12px; font-weight: bold; padding: 5px;">$ctf_teammates$</td>
++            </tr>
++          </table>
++      </html>
++    </panel>
++    <panel>
++      <html>
++             
++        <h3 class="section-heading">
++          <center>Time Remaining</center>
++        </h3>
++        <div id="clock"></div>
++        <div id="clock-text">(Days:Hours:Minutes:Seconds)</div>
++      </html>
++    </panel>
++  </row>
++  <row>
++    <panel>
++      <html>
++       <div style="padding:5px;border:1px dotted black;">
++         <h4>
++           <b>Click "&gt;" in the first column of any row below to see your team's entire submission history for that question.</b>
++         </h4>
++       </div>
++     </html>
++    </panel>
++  </row>
++  <row>
++    <panel depends="$a_token_never_seen$">
++      <table>
++        <search>
++          <query>
++          | inputlookup ctf_users 
++          | search 
++            [ search 
++              | eval user="$env:user$" `get_user_info` 
++              | fields Team] 
++              | eval RealPlusSplunk=DisplayUsername . " (" . Username . ")" 
++              | stats values(RealPlusSplunk) as TeamMates 
++              | eval TeamMates=mvjoin(TeamMates, ", ")
++          </query>
++          <earliest>0</earliest>
++          <finalized>
++            <condition match=" 'job.resultCount' = 1">
++              <set token="ctf_teammates">$result.TeamMates$</set>
++            </condition>
++            <condition></condition>
++          </finalized>
++        </search>
++      </table>
++    </panel>
++    <panel depends="$a_token_never_seen$">
++      <table>
++        <search>
++          <query>
++          | makeresults
++          | eval user="$env:user$"  `get_user_info`
++          | fields *
++          </query>
++          <earliest>0</earliest>
++          <finalized>
++            <condition match=" 'job.resultCount' = 1">
++              <set token="ctf_user">$result.user$</set>
++              <set token="ctf_DisplayUsername">$result.DisplayUsername$</set>
++              <set token="ctf_Team">$result.Team$</set>
++              <set token="ctf_SearchUrl">$result.SearchUrl$</set>
++            </condition>
++            <condition></condition>
++          </finalized>
++        </search>
++      </table>
++    </panel>
++  </row>
++  <row>
++    <panel>
++      <table id="table1">
++        <search>
++          <query>index=scoreboard AND (Result="Incorrect" OR Result="Correct" OR Result=Bonus) `get_user_info`
++| search 
++    [ | makeresults 
++      | eval user="$env:user$"  `get_user_info`
++      | fields Team] 
++| stats count as Attempts, max(BasePointsAwarded) as BasePointsEarned, max(SpeedBonusAwarded) as BonusPointsEarned, sum(Penalty) as PenaltyPoints, max(AdditionalBonusAwarded) as AdditionalBonus, count(eval(Result=="Incorrect")) as IncorrectAttempts, count(eval(Result=="Correct")) as CorrectAttempts by Number 
++| append 
++    [ inputlookup ctf_questions 
++    | eval Attempts = 0 
++    | eval IncorrectAttempts = 0 
++    | eval CorrectAttempts = 0 
++    | fields Number Question BasePoints Attempts CorrectAttempts IncorrectAttempts] 
++| stats last(Question) as Question, last(BasePoints) as BasePointsAvailable, last(BasePointsEarned) as BasePointsEarned, last(BonusPointsEarned) as BonusPointsEarned, max(AdditionalBonus) as AdditionalBonus, sum(PenaltyPoints) as PenaltyPoints, sum(Attempts) as Attempts, sum(IncorrectAttempts) as IncorrectAttempts, sum(CorrectAttempts) as CorrectAttempts by Number 
++| eval Status = if(Attempts = 0,"Unanswered", Status) 
++| eval Status = if(IncorrectAttempts &gt; 0, "Incorrect", Status) 
++| eval Status = if(CorrectAttempts &gt; 0, "Correct", Status) 
++| fillnull value=0 BasePointsEarned 
++| fillnull value=0 BonusPointsEarned 
++| fillnull value=0 PenaltyPoints
++| fillnull value=0 AdditionalBonus
++| fields Number Question Status BasePointsAvailable BasePointsEarned BonusPointsEarned AdditionalBonus PenaltyPoints
++| rename BasePointsAvailable as "Base Points Avail." 
++| rename BasePointsEarned as "Base Points Earned" 
++| rename BonusPointsEarned as "Speed Bonus Earned" 
++| rename PenaltyPoints as "Penalty" 
++| rename AdditionalBonus as "Additional Bonus"
++
++| sort Number</query>
++          <earliest>$earliest$</earliest>
++          <latest>$latest$</latest>
++        </search>
++        <option name="count">100</option>
++        <option name="dataOverlayMode">none</option>
++        <option name="drilldown">row</option>
++        <option name="wrap">true</option>
++        <drilldown>
++          <link>question?Number=$row.Number$&amp;Question=$row.Question$</link>
++        </drilldown>
++      </table>
++    </panel>
++  </row>
++</dashboard>
+\ No newline at end of file
+diff '--color=auto' -ruN '--exclude=.git' '--exclude=currentscore.csv' a/SA-ctf_scoreboard/local/data/ui/views/question.xml b/SA-ctf_scoreboard/local/data/ui/views/question.xml
+--- a/SA-ctf_scoreboard/local/data/ui/views/question.xml	1970-01-01 01:00:00.000000000 +0100
++++ b/SA-ctf_scoreboard/local/data/ui/views/question.xml	2026-09-30 22:45:08.514225772 +0100
+@@ -0,0 +1,160 @@
++<dashboard version="1.1" hideEdit="False" hideTitle="True" script="table_icons_inline.js, custom_table_row_expansion.js" stylesheet="table_decorations.css" theme="dark">
++  <label>question</label>
++  <row>
++    <panel>
++      <html>
++      <table>
++        <tr>
++          <td width="20%">
++             <img height="485" width="101" src="/static/app/SA-ctf_scoreboard/ctflogo.png"/>
++          </td>
++          <td>
++      		<h1>Submit an Answer to Question $Number$</h1>
++          </td>
++        </tr>
++        </table>
++     	 <p/>
++      	<div style="padding:10px;border:1px dotted black;">
++          <p/>
++      			<h3>$Question$ </h3>
++          <p/>
++		</div>
++     	 <p/>
++      <form action="/en-US/custom/SA-ctf_scoreboard/scoreboard_controller/submit_question" method="get">
++        <input type="hidden" id="Number" name="Number" value="$Number$"/>
++      <input type="hidden" id="Question" name="Question" value="$Question$"/>
++        <b>Answer: </b>
++          <input type="text" id="Answer" name="Answer"/> 
++        <input type="submit" value="Submit"/>
++      </form>
++      <p/>
++      <h2>Tips and Tricks</h2>
++      <ul>
++        <li>Answers are case <b>in</b>sensitive! e.g. "Elite Hacker" == "eLite haCKer"</li>
++        <li>Leading and trailing whitespace in your answer is stripped away.</li>
++        <li>We strive to make the answers be short, concise, and easy to enter. If you find youself entering very long answers with complex spacing and punctuation, you are probably <b>not</b> on the right track.</li>
++        <li>Some questions contain free hints about the formatting of the answer. Use them!</li>
++      </ul>
++    </html>
++    </panel>
++  </row>
++  <row>
++    <panel>
++      <html>      	
++        <div style="padding:10px;border:1px dotted black;">
++          <h3>Submission History</h3>
++                          <h4>Click "&gt;" below to see your team's entire submission history for this question.</h4>
++
++        </div>
++
++      </html>
++    </panel>
++  </row>
++  <row>
++    <panel>
++      <table id="table1">
++        <search>
++          <query>index=scoreboard NOT Result=Hint
++| lookup ctf_users Username as user 
++| eval Team=if(Team != "", Team, DisplayUsername) 
++| eval Team=if(Team != "", Team, Username) 
++| eval Team=if(Team != "", Team, user) 
++| search 
++    [ rest /services/authentication/current-context 
++    | rename username as user 
++    | lookup ctf_users Username as user 
++    | eval Team=if(Team != "", Team, DisplayUsername) 
++    | eval Team=if(Team != "", Team, Username) 
++    | eval Team=if(Team != "", Team, user) 
++    | fields + Team] 
++| stats count as Attempts, max(BasePointsAwarded) as BasePointsEarned, max(SpeedBonusAwarded) as BonusPointsEarned, sum(Penalty) as PenaltyPoints count(eval(Result=="Incorrect")) as IncorrectAttempts, count(eval(Result=="Correct")) as CorrectAttempts by Number 
++| append 
++    [ inputlookup ctf_questions 
++    | eval Attempts = 0 
++    | eval IncorrectAttempts = 0 
++    | eval CorrectAttempts = 0 
++    | fields Number Question BasePoints Attempts CorrectAttempts IncorrectAttempts] 
++| gethints
++| stats last(BasePoints) as BasePointsAvailable, last(BasePointsEarned) as BasePointsEarned, last(BonusPointsEarned) as BonusPointsEarned, sum(PenaltyPoints) as PenaltyPoints, sum(Attempts) as Attempts, sum(IncorrectAttempts) as IncorrectAttempts, sum(CorrectAttempts) as CorrectAttempts last(HintsAvailable) as HintsAvailable, last(HintsReceived) as HintsReceived by Number 
++| eval Status = if(Attempts = 0,"Unanswered", Status) 
++| eval Status = if(IncorrectAttempts &gt; 0, "Incorrect", Status) 
++| eval Status = if(CorrectAttempts &gt; 0, "Correct", Status) 
++| fillnull value=0 BasePointsEarned 
++| fillnull value=0 BonusPointsEarned 
++| fillnull value=0 PenaltyPoints 
++| fields Number Status BasePointsAvailable BasePointsEarned BonusPointsEarned PenaltyPoints HintsAvailable HintsReceived
++| rename BasePointsAvailable as "Base Points Avail." 
++| rename BasePointsEarned as "Base Points Earned" 
++| rename BonusPointsEarned as "Bonus Points Earned" 
++| rename PenaltyPoints as "Penalty Points" 
++| rename HintsAvailable as "Hints Available"
++| rename HintsReceived as "Hints Received"
++| search Number=$Number$</query>
++          <earliest>$earliest$</earliest>
++          <latest>$latest$</latest>
++        </search>
++        <option name="count">50</option>
++        <option name="dataOverlayMode">none</option>
++        <option name="drilldown">none</option>
++        <option name="wrap">true</option>
++        <drilldown>
++          <link>question?Number=$row.Number$&amp;Question=$row.Question$</link>
++        </drilldown>
++      </table>
++    </panel>
++  </row>
++  <row>
++    <panel>
++      <html>
++        <div style="padding:10px;border:1px dotted black;">
++          <h3>Hints</h3> 
++          <ul>
++            <li>See the hints your team has purchased below. If you see <b>Your team has not purchased this hint yet!</b> you can click the hint to purchase it.</li>
++            <li>If you see <b>'No results found.' below</b> it means there are simply no hints for this question. Good luck!</li>
++          </ul>
++        </div>
++      </html>
++    </panel>
++  </row>
++  <row>
++    <panel>
++      <table>
++        <search>
++          <query>index=scoreboard 
++| lookup ctf_users Username as user 
++| eval Team=if(Team != "", Team, DisplayUsername) 
++| eval Team=if(Team != "", Team, Username) 
++| eval Team=if(Team != "", Team, user) 
++| search 
++    [ rest /services/authentication/current-context 
++    | rename username as user 
++    | lookup ctf_users Username as user 
++    | eval Team=if(Team != "", Team, DisplayUsername) 
++    | eval Team=if(Team != "", Team, Username) 
++    | eval Team=if(Team != "", Team, user) 
++    | fields + Team] 
++| stats count as Attempts, max(BasePointsAwarded) as BasePointsEarned, max(SpeedBonusAwarded) as BonusPointsEarned, sum(Penalty) as PenaltyPoints count(eval(Result=="Incorrect")) as IncorrectAttempts, count(eval(Result=="Correct")) as CorrectAttempts by Number 
++| append 
++    [ inputlookup ctf_questions 
++    | eval Attempts = 0 
++    | eval IncorrectAttempts = 0 
++    | eval CorrectAttempts = 0 
++    | fields Number Question BasePoints Attempts CorrectAttempts IncorrectAttempts] 
++| gethints 
++| stats values(Hints) as Hints by Number
++| mvexpand Hints 
++| spath input=Hints 
++| eval Number=mvdedup(Number) 
++| fields Number HintNumber HintCost Hint 
++| sort Number HintNumber 
++| rename HintCost as "Hint Cost"
++| search Number=$Number$ Hint=*</query>
++        </search>
++        <option name="drilldown">row</option>
++        <drilldown>
++          <link>/custom/SA-ctf_scoreboard/scoreboard_controller/purchase_hint?Number=$row.Number$&amp;HintNumber=$row.HintNumber$&amp;Question=$Question$</link>
++        </drilldown>
++      </table>
++    </panel>
++  </row>
++</dashboard>
+diff '--color=auto' -ruN '--exclude=.git' '--exclude=currentscore.csv' a/SA-ctf_scoreboard/local/data/ui/views/result.xml b/SA-ctf_scoreboard/local/data/ui/views/result.xml
+--- a/SA-ctf_scoreboard/local/data/ui/views/result.xml	1970-01-01 01:00:00.000000000 +0100
++++ b/SA-ctf_scoreboard/local/data/ui/views/result.xml	2026-09-30 22:45:08.515166611 +0100
+@@ -0,0 +1,95 @@
++<dashboard version="1.1" script="result.js" stylesheet="result.css" hideEdit="True" hideTitle="True" theme="dark">
++  <label>result</label>
++  <row>
++    <panel>
++      <html>
++        <table>
++          <tr>
++            <td width="20%">
++             <img height="485" width="101" src="/static/app/SA-ctf_scoreboard/ctflogo.png"/>
++            </td>
++            <td>
++      		  <h1> Results for Question $Number$</h1>
++            </td>
++          </tr>
++        </table>
++        <p/>
++      	<div style="padding:10px;border:1px dotted black;">
++          <p/>
++          <div id="Result" class="Result">
++            <div id="Result1"> Your answer was $Result$. </div>
++            <br/>
++            <div id="Result2">
++              <table id="ResultTable" class="ResultTable">
++              </table>  </div>
++            <br/>
++            <div id="AdditionalNotes" class="AdditionalNotes"/>
++            <br/>
++          </div>
++            
++            <div id="BonusInfo" class="BonusInfo">
++            <form action="/en-US/custom/SA-ctf_scoreboard/scoreboard_controller/submit_bonus_info" method="get">
++              <input type="hidden" id="Number" name="Number" value="$Number$"/>
++              <input type="hidden" id="Question" name="Question" value="$Question|u$"/>
++
++              <b>$SolicitBonusInstructions$ </b>
++              <input type="text" id="BonusInfo" name="BonusInfo"/> 
++              <input type="submit" value="Submit"/>
++            </form>
++          </div>
++          </div>
++            
++            <p/>
++          <p/>
++          <a href="question?Number=$Number$&amp;Question=$Question|u$">Attempt this question again</a>
++        <br/>
++          <a href="questions"> Return to Question List </a>
++        <br/>
++          <a id="ViewDetails"> View Response Details</a>
++            </html>
++    </panel>
++  </row>
++  <row>
++    <panel depends="$ViewDetails$">
++      <html>
++            
++            
++     	<p/>
++        <h3> Response Details </h3>
++        Question: $QuestionOfficial$<br/>
++        Number: $Number$<br/>
++		User: $user$<br/>
++		Base points available: $BasePointsAvailable$<br/>
++		Start time (epoch): $StartTime$<br/>
++		End time (epoch): $EndTime$<br/>
++		Results: $Result$<br/>
++		Penalty: $Penalty$<br/>
++		Base points awarded: $BasePointsAwarded$<br/>
++		Speed bonus points awarded: $SpeedBonusAwarded$<br/>
++		Additional bonus points awarded: $AdditionalBonusAwarded$<br/>
++        <p/>
++        
++        <h3>What does this mean?</h3>
++        <ul>
++          <li>A full description of scoring is available on the <a href="rules">rules page</a>
++          </li>
++          <li>If you answer a question correctly (and between the start and end times for that question), your team will be awarded full base points. </li>
++          <li>Correct answers also earn a speed bonus which is larger for earlier entries, and smaller for later entries. Speed counts! </li>
++          <li>If your result is correct, but you were not awarded base or bonus points, you likely submitted your answer before or after the question was 
++              active. This is usually not something you need to worry about as the organizers will have set the times appropriately for the competition. </li>
++          <li>You may answer a question correctly more than once, but it won't do you any good. Multiple correct 
++              submissions do not result in a penalty, but we only count one correct submission (the one that resulted in 
++              the most points) per question. Regardless of what you think you see above, <b> It does not 
++              pay to resubmit correct answers for the same question multiple times. </b>
++          </li>
++          <li>An educated guess is not a bad thing. On the other hand, we can't have you brute-forcing our answer system. Incorrect answers
++              result in a penalty. Penalties are cumulative, so after a certain number of incorrect responses you will have exhausted the 
++              base and bonus points available for that question. </li>
++          <li>If you are working as a team, you need <b>not</b> submit answers from multiple users. In fact there is no benefit to doing so. 
++              Be careful with incorrect attempts though, as a penalty against one team member is a penalty against all. We recommend 
++              staying in close contact with your team during the competition. </li>
++        </ul>
++      </html>
++    </panel>
++  </row>
++</dashboard>
+diff '--color=auto' -ruN '--exclude=.git' '--exclude=currentscore.csv' a/SA-ctf_scoreboard/local/data/ui/views/score_timeline.xml b/SA-ctf_scoreboard/local/data/ui/views/score_timeline.xml
+--- a/SA-ctf_scoreboard/local/data/ui/views/score_timeline.xml	1970-01-01 01:00:00.000000000 +0100
++++ b/SA-ctf_scoreboard/local/data/ui/views/score_timeline.xml	2026-09-30 18:49:25.644643035 +0100
+@@ -0,0 +1,21 @@
++<dashboard hideEdit="True" theme="dark">
++  <label>Score Timeline</label>
++  <row>
++    <panel>
++      <title>Top 5 Teams</title>
++      <chart>
++        <search>
++          <query>index=scoreboard user!=admin `get_user_info`  | `Teams_Scores` | search [search index=scoreboard user!=admin `get_user_info` | fields * | `Teams_Scores` |  stats sum(Score) as Score by Team | sort - Score | head 5 | fields Team] | xyseries _time Team CumulativeScore | filldown</query>
++          <earliest>0</earliest>
++          <sampleRatio>1</sampleRatio>
++        </search>
++        <option name="charting.chart">line</option>
++        <option name="charting.chart.nullValueMode">connect</option>
++        <option name="charting.legend.placement">right</option>
++        <option name="charting.axisTitleX.visibility">collapsed</option>
++        <option name="charting.axisTitleY.text">Cumulative score</option>
++        <option name="height">782</option>
++      </chart>
++    </panel>
++  </row>
++</dashboard>
+\ No newline at end of file
+diff '--color=auto' -ruN '--exclude=.git' '--exclude=currentscore.csv' a/SA-ctf_scoreboard/local/data/ui/views/top_10_teams_global.xml b/SA-ctf_scoreboard/local/data/ui/views/top_10_teams_global.xml
+--- a/SA-ctf_scoreboard/local/data/ui/views/top_10_teams_global.xml	1970-01-01 01:00:00.000000000 +0100
++++ b/SA-ctf_scoreboard/local/data/ui/views/top_10_teams_global.xml	2026-09-30 22:45:08.515880720 +0100
+@@ -0,0 +1,54 @@
++<dashboard version="1.1" hideEdit="True" hideTitle="true" theme="dark" stylesheet="top_10_teams.css">
++  <label>Top 10 Teams (Event-Wide)</label>
++  <row>
++    <panel>
++      <html>
++      
++        <title>Top 10 Teams (Event-Wide)</title>
++        
++        <img src="/static/app/SA-ctf_scoreboard/ctflogo.png" width="100" align="left" hspace="20"/>
++        <b>
++        <h1 style="font-size:40pt;text-align:center;position:absolute;top:50%;left:50%;transform:translateX(-50%)translateY(-50%);">
++          Top 10 Teams (Event-Wide)
++          </h1>
++          <text style="font-size:10pt;text-align:center;position:absolute;top:90%;left:50%;transform:translateX(-50%)translateY(-50%);"> Results may be delayed up to two minutes. </text>
++        </b>
++
++ 
++
++      </html>
++      <chart>
++        <search>
++          <query>| inputlookup rankings.csv 
++| head 10
++| table "Rank: Team" Score</query>
++        </search>
++        <option name="height">600</option>
++        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
++        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
++        <option name="charting.axisTitleX.visibility">collapsed</option>
++        <option name="charting.axisTitleY.visibility">collapsed</option>
++        <option name="charting.axisTitleY2.visibility">visible</option>
++        <option name="charting.axisX.scale">linear</option>
++        <option name="charting.axisY.scale">linear</option>
++        <option name="charting.axisY2.enabled">0</option>
++        <option name="charting.axisY2.scale">inherit</option>
++        <option name="charting.chart">bar</option>
++        <option name="charting.chart.bubbleMaximumSize">50</option>
++        <option name="charting.chart.bubbleMinimumSize">10</option>
++        <option name="charting.chart.bubbleSizeBy">area</option>
++        <option name="charting.chart.nullValueMode">gaps</option>
++        <option name="charting.chart.showDataLabels">all</option>
++        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
++        <option name="charting.chart.stackMode">default</option>
++        <option name="charting.chart.style">shiny</option>
++        <option name="charting.drilldown">none</option>
++        <option name="charting.layout.splitSeries">0</option>
++        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
++        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
++        <option name="charting.legend.placement">none</option>
++        <option name="charting.gridLinesY.showMajorLines">false</option>
++      </chart>
++    </panel>
++  </row>
++</dashboard>
+\ No newline at end of file
+diff '--color=auto' -ruN '--exclude=.git' '--exclude=currentscore.csv' a/SA-ctf_scoreboard/local/data/ui/views/top_10_teams.xml b/SA-ctf_scoreboard/local/data/ui/views/top_10_teams.xml
+--- a/SA-ctf_scoreboard/local/data/ui/views/top_10_teams.xml	1970-01-01 01:00:00.000000000 +0100
++++ b/SA-ctf_scoreboard/local/data/ui/views/top_10_teams.xml	2026-09-30 22:45:08.515550641 +0100
+@@ -0,0 +1,59 @@
++<dashboard version="1.1" hideEdit="True" hideTitle="true" theme="dark" stylesheet="top_10_teams.css">
++  <label>Top 10 Teams</label>
++  <search id="base" ref="Score-Base"></search>
++  <search base="base" id="secondary">
++    <query>fields Rank Team Score</query>
++  </search>
++  <row>
++    <panel>
++      <html>
++      
++        <title>Top 10</title>
++        
++        <img src="/static/app/SA-ctf_scoreboard/ctflogo.png" width="100" align="left" hspace="20"/>
++        <b>
++        <h1 style="font-size:50pt;text-align:center;position:absolute;top:50%;left:50%;transform:translateX(-50%)translateY(-50%);">
++          Top 10 Teams
++          </h1>
++        </b>
++
++ 
++
++      </html>
++      <chart>
++        <search base="secondary">
++          <query>head 10
++| eval RankText="# " . Rank . ": "
++| eval TeamRank=RankText . Team
++| table TeamRank Score
++| rename TeamRank AS "Rank: Team"</query>
++        </search>
++        <option name="height">600</option>
++        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
++        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
++        <option name="charting.axisTitleX.visibility">collapsed</option>
++        <option name="charting.axisTitleY.visibility">collapsed</option>
++        <option name="charting.axisTitleY2.visibility">visible</option>
++        <option name="charting.axisX.scale">linear</option>
++        <option name="charting.axisY.scale">linear</option>
++        <option name="charting.axisY2.enabled">0</option>
++        <option name="charting.axisY2.scale">inherit</option>
++        <option name="charting.chart">bar</option>
++        <option name="charting.chart.bubbleMaximumSize">50</option>
++        <option name="charting.chart.bubbleMinimumSize">10</option>
++        <option name="charting.chart.bubbleSizeBy">area</option>
++        <option name="charting.chart.nullValueMode">gaps</option>
++        <option name="charting.chart.showDataLabels">all</option>
++        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
++        <option name="charting.chart.stackMode">default</option>
++        <option name="charting.chart.style">shiny</option>
++        <option name="charting.drilldown">none</option>
++        <option name="charting.layout.splitSeries">0</option>
++        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
++        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
++        <option name="charting.legend.placement">none</option>
++        <option name="charting.gridLinesY.showMajorLines">false</option>
++      </chart>
++    </panel>
++  </row>
++</dashboard>
+\ No newline at end of file
+diff '--color=auto' -ruN '--exclude=.git' '--exclude=currentscore.csv' a/SA-ctf_scoreboard/local/data/ui/views/welcome.xml b/SA-ctf_scoreboard/local/data/ui/views/welcome.xml
+--- a/SA-ctf_scoreboard/local/data/ui/views/welcome.xml	1970-01-01 01:00:00.000000000 +0100
++++ b/SA-ctf_scoreboard/local/data/ui/views/welcome.xml	2026-09-30 22:45:08.516392359 +0100
+@@ -0,0 +1,96 @@
++<dashboard version="1.1" script="welcome.js" stylesheet="welcome.css" hideEdit="true" hideTitle="true" theme="dark" >
++  <label>Welcome</label>
++  <row>
++    <panel depends="$a_token_never_seen$">
++      <table>
++        <search>
++          <query>
++          | makeresults
++          | eval user="$env:user$"  `get_user_info_real`
++          | fields *
++          </query>
++          <earliest>0</earliest>
++          <finalized>
++            <condition match=" 'job.resultCount' = 1">
++              <set token="ctf_user">$result.user$</set>
++              <set token="ctf_DisplayUsername">$result.DisplayUsername$</set>
++              <set token="ctf_Team">$result.Team$</set>
++              <set token="ctf_SearchUrl">$result.SearchUrl$</set>
++              <set token="ctf_SearchUrl2">$result.SearchUrl2$</set>
++              <set token="ctf_agreement_accepted">$result.EulaAccepted$</set>
++
++            </condition>
++            <condition></condition>
++          </finalized>
++        </search>
++      </table>
++    </panel>
++    <panel>
++      <html>
++        <div style="float:left; width:70%;">
++          <h1> Welcome to the Cature The Flag (CTF) Competition </h1>
++          <div>You'll be presented with realistic scenarios, and you will earn points by answering questions of varying difficulty. 
++          </div>
++          <h1>Your Event Details</h1>
++          <table>
++            <tr>
++              <td style="font-size: 14px; padding: 10px;border: 1px solid black;">Splunk User</td>
++              <td style="font-size: 18px; font-weight: bold; padding: 10px;border: 1px solid black;">$ctf_user$</td>
++            </tr>
++            <tr>
++              <td style="font-size: 14px; padding: 10px;border: 1px solid black;">Display Username</td>
++              <td style="font-size: 18px; font-weight: bold; padding: 10px;border: 1px solid black;">$ctf_DisplayUsername$</td>              
++            </tr>
++            <tr>
++              <td style="font-size: 14px; padding: 10px;border: 1px solid black;">Team</td>
++              <td style="font-size: 18px; font-weight: bold; padding: 10px;border: 1px solid black;">$ctf_Team$ </td>
++            </tr>
++            <tr>
++              <td style="font-size: 14px; padding: 10px;border: 1px solid black;">Search Server URL<br/>
++                  <text style="font-size: 12px;color: red; font-weight: bold;">Log in with your CTF credentials</text>
++              </td>
++              <td style="font-size: 18px; font-weight: bold; padding: 10px;border: 1px solid black;">
++                <a target="_blank" href="$ctf_SearchUrl$">$ctf_SearchUrl$</a>
++              </td>                
++            </tr>
++            <tr>
++              <td style="font-size: 14px; padding: 10px;border: 1px solid black;">Stealth Mode</td>
++              <td style="font-size: 18px; font-weight: bold; padding: 10px;border: 1px solid black;">$ctf_stealth_mode$</td>                
++            </tr>
++            <tr>
++              <td style="font-size: 14px; padding: 10px;border: 1px solid black;">User Agreement</td>
++              <td style="font-size: 18px; font-weight: bold; padding: 10px;border: 1px solid black;">$ctf_agreement_accepted$</td>
++              <td style="padding: 10px;border-top: none; border-bottom:none; border-right: none;"></td>                
++            </tr>
++          </table>
++
++        </div>
++        <div style="float:right;">
++          <img style="height:350px" src="/static/app/SA-ctf_scoreboard/ctflogo.png"/>
++        </div>
++      </html>
++      <html>
++        <div style="float:left; width:20%;">
++          <h1>User Agreement</h1>
++          <button class="btn btn-primary" title="You must accept the user agreement to participate in the event." data-placement="top" data-toggle="tooltip" id="agreement_modal_button">View/Accept</button><br/>
++        </div>
++        <div style="float:left; width:20%;">
++          <h1>Stealth Mode</h1>
++          <button class="btn btn-primary" title="When enabled, your real team name will be masked with a random, unattributable stealth-mode string. You are free to enable or disable stealth mode at any time but beware that the setting affects your entire team. Please allow up to five minutes for stealth mode to propagate to the scoring dashboards." data-placement="top" data-toggle="tooltip" id="enable_stealth_button">Enable</button>
++          <button class="btn btn-primary" title="When enabled, your real team name will be masked with a random, unattributable stealth-mode string. You are free to enable or disable stealth mode at any time but beware that the setting affects your entire team. Please allow up to five minutes for stealth mode to propagate to the scoring dashboards." data-placement="top" data-toggle="tooltip" id="disable_stealth_button">Disable</button>
++        </div>
++      </html>
++      <html>
++        <h1>Important resources</h1>
++        <ul>
++          <li> <a href="questions">Questions</a>: This is where the magic happens. Submit answers and review your team's previous responses.</li>
++          <li> <a href="top_10_teams">Top 10 Teams</a>: This leaderboard shows the current top ten teams.</li>
++          <li> <a href="AllScores">All Teams' Scores</a>: All scores including every team in the competition.</li>
++          <li> <a href="event_activity">Event Activity</a>: You can view current activity like most active teams, and who's buying hints.</li>
++          <li> <a href="rules">Rules</a>: Take a quick look at the event rules if you haven’t already. TL;DR be a good person.</li>
++          <li> Help Menu: Scenarios and other resources that will help you throughout the competition.</li>
++        </ul>
++      </html>
++    </panel>
++  </row>
++</dashboard>

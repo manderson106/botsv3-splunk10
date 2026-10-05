@@ -1,0 +1,19 @@
+<dashboard hideEdit="True" theme="dark">
+  <label>Score Timeline</label>
+  <row>
+    <panel>
+      <title>Top 5 Teams</title>
+      <viz type="simpletimeseries_app.simpletimeseries">
+        <search>
+          <query>index=scoreboard user!=admin `get_user_info`  | `Teams_Scores` | search [search index=scoreboard user!=admin `get_user_info` | fields * | `Teams_Scores` |  stats sum(Score) as Score by Team | sort - Score | head 5 | fields Team] | table _time Team CumulativeScore</query>
+          <earliest>0</earliest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="height">782</option>
+        <option name="simpletimeseries_app.simpletimeseries.seriesWidth">3</option>
+        <option name="simpletimeseries_app.simpletimeseries.showDatapoints">true</option>
+        <option name="simpletimeseries_app.simpletimeseries.showLegend">true</option>
+      </viz>
+    </panel>
+  </row>
+</dashboard>

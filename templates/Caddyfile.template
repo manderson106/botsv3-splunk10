@@ -1,0 +1,10 @@
+# Replace __DOMAIN__ (install.sh does this from $DOMAIN). Caddy obtains a Let's Encrypt cert automatically.
+__DOMAIN__ {
+	reverse_proxy https://127.0.0.1:8000 {
+		header_up Host {host}
+		header_up X-Forwarded-Proto https
+		transport http {
+			tls_insecure_skip_verify
+		}
+	}
+}

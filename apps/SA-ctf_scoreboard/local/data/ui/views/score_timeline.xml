@@ -1,0 +1,21 @@
+<dashboard hideEdit="True" theme="dark">
+  <label>Score Timeline</label>
+  <row>
+    <panel>
+      <title>Top 5 Teams</title>
+      <chart>
+        <search>
+          <query>index=scoreboard user!=admin `get_user_info`  | `Teams_Scores` | search [search index=scoreboard user!=admin `get_user_info` | fields * | `Teams_Scores` |  stats sum(Score) as Score by Team | sort - Score | head 5 | fields Team] | xyseries _time Team CumulativeScore | filldown</query>
+          <earliest>0</earliest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.text">Cumulative score</option>
+        <option name="height">782</option>
+      </chart>
+    </panel>
+  </row>
+</dashboard>

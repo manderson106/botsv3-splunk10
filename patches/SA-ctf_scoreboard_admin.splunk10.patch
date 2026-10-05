@@ -1,0 +1,429 @@
+diff '--color=auto' -ruN '--exclude=.git' '--exclude=currentscore.csv' a/SA-ctf_scoreboard_admin/local/app.conf b/SA-ctf_scoreboard_admin/local/app.conf
+--- a/SA-ctf_scoreboard_admin/local/app.conf	1970-01-01 01:00:00.000000000 +0100
++++ b/SA-ctf_scoreboard_admin/local/app.conf	2026-09-30 22:48:45.490820161 +0100
+@@ -0,0 +1,2 @@
++[install]
++build = 1001
+diff '--color=auto' -ruN '--exclude=.git' '--exclude=currentscore.csv' a/SA-ctf_scoreboard_admin/local/data/ui/views/assign_ebadges.xml b/SA-ctf_scoreboard_admin/local/data/ui/views/assign_ebadges.xml
+--- a/SA-ctf_scoreboard_admin/local/data/ui/views/assign_ebadges.xml	1970-01-01 01:00:00.000000000 +0100
++++ b/SA-ctf_scoreboard_admin/local/data/ui/views/assign_ebadges.xml	2026-09-30 22:45:08.516968838 +0100
+@@ -0,0 +1,74 @@
++<form version="1.1" script="all_ebadges.js" stylesheet="all_ebadges.css">
++  <label>Manually Assign eBadges</label>
++  <fieldset submitButton="false" autoRun="false">
++    <input type="dropdown" token="ebadge" searchWhenChanged="true">
++      <label>eBadge to Assign</label>
++      <fieldForLabel>num_and_name</fieldForLabel>
++      <fieldForValue>BadgeNumber</fieldForValue>
++      <search>
++        <query>| inputlookup ctf_badges | eval num_and_name=BadgeNumber . ". " . BadgeName</query>
++      </search>
++    </input>
++    <input type="dropdown" token="recipient">
++      <label>Team / User</label>
++      <delimiter> </delimiter>
++      <fieldForLabel>label_field</fieldForLabel>
++      <fieldForValue>value_field</fieldForValue>
++      <search>
++        <query>| inputlookup ctf_users 
++| eval label_field=DisplayUsername . " (" . Username . ", " . Team . ")" | eval value_field = Username
++| append 
++    [| inputlookup ctf_users 
++    | eval label_field="Team " . Team | eval value_field = Team] 
++| where label_field != "Team " 
++| dedup label_field</query>
++      </search>
++    </input>
++    <input type="text" token="notes">
++      <label>Notes</label>
++      <default></default>
++    </input>
++    <input type="dropdown" token="award_to_entire_team" searchWhenChanged="false">
++      <label></label>
++      <choice value="0">Assign to user only.</choice>
++      <choice value="1">Assign to user and all their teammates.</choice>
++      <default>0</default>
++    </input>
++  </fieldset>
++  <row>
++    <panel>
++      <html>
++        <input id="diy_submit" type="button" value="Assign eBadge"/>
++        <h3>Current Assignments for this eBadge</h3>
++        <div id="badge_div"/>
++      </html>
++    </panel>
++  </row>
++  <row>
++    <panel>
++      <title>Awarded to all members of the team that correctly answers the first 1K point question of the event.</title>
++      <table>
++        <search>
++          <query>earliest=0 index="scoreboard_admin" "result=Correct" Number!=1 
++| search  "result=Correct" Number!=1 BasePointsAwarded=1000 Result=Correct 
++| search  `get_user_info`
++| lookup ctf_badge_entitlements user AS user OUTPUT BadgeNumber 
++| eval BadgeNumber=mvfilter(match(BadgeNumber, "^18$$" )) 
++| eval Awarded=if(mvcount(BadgeNumber) &gt; 0, 1, 0) 
++| tail 1 
++| table user DisplayUsername Team  Awarded</query>
++          <earliest>0</earliest>
++          <latest>now</latest>
++          <sampleRatio>1</sampleRatio>
++        </search>
++        <option name="count">100</option>
++        <option name="dataOverlayMode">none</option>
++        <option name="drilldown">none</option>
++        <option name="percentagesRow">false</option>
++        <option name="rowNumbers">false</option>
++        <option name="totalsRow">false</option>
++        <option name="wrap">true</option>
++      </table>
++    </panel>
++  </row>
++</form>
+\ No newline at end of file
+diff '--color=auto' -ruN '--exclude=.git' '--exclude=currentscore.csv' a/SA-ctf_scoreboard_admin/local/data/ui/views/countdown.xml b/SA-ctf_scoreboard_admin/local/data/ui/views/countdown.xml
+--- a/SA-ctf_scoreboard_admin/local/data/ui/views/countdown.xml	1970-01-01 01:00:00.000000000 +0100
++++ b/SA-ctf_scoreboard_admin/local/data/ui/views/countdown.xml	2026-09-30 22:45:08.517178188 +0100
+@@ -0,0 +1,12 @@
++<dashboard version="1.1" script="instantiate_countdown.js" stylesheet="countdown.css">
++  <label>Time Remaining</label>
++  <row>
++    <panel>
++      <html>
++        <div id="clock">
++        </div>
++        <div id="clock-text">(Days:Hours:Minutes:Seconds)</div>
++      </html>
++    </panel>
++  </row>
++</dashboard>
+\ No newline at end of file
+diff '--color=auto' -ruN '--exclude=.git' '--exclude=currentscore.csv' a/SA-ctf_scoreboard_admin/local/data/ui/views/question_access.xml b/SA-ctf_scoreboard_admin/local/data/ui/views/question_access.xml
+--- a/SA-ctf_scoreboard_admin/local/data/ui/views/question_access.xml	1970-01-01 01:00:00.000000000 +0100
++++ b/SA-ctf_scoreboard_admin/local/data/ui/views/question_access.xml	2026-09-30 22:45:08.517805417 +0100
+@@ -0,0 +1,28 @@
++<dashboard version="1.1" script="questionaccess.js" stylesheet="questionaccess.css">
++  <label>Question Access</label>
++  <row>
++    <panel>
++      <title>Question Access for CTF Participants</title>
++      <single>
++        <search>
++          <query>|checkqaccess | eval dontcare=$somethingchanged$ | eval access=if(canread==1,"Enabled","Disabled") | fields access | rename access as "Competitor Question Access"</query>
++          <earliest>-24h@h</earliest>
++          <latest>now</latest>
++          <sampleRatio>1</sampleRatio>
++        </search>
++        <option name="drilldown">none</option>
++      </single>
++    </panel>
++  </row>
++  <row>
++    <panel>
++      <html>
++        <div class="togglebuttondiv">
++          <span class="togglebuttondiv">
++            <input id="togglebutton" type="button" value="Toggle Access" class="togglebutton"/>
++          </span>
++        </div>
++      </html>
++    </panel>
++  </row>
++</dashboard>
+\ No newline at end of file
+diff '--color=auto' -ruN '--exclude=.git' '--exclude=currentscore.csv' a/SA-ctf_scoreboard_admin/local/data/ui/views/time_setup.xml b/SA-ctf_scoreboard_admin/local/data/ui/views/time_setup.xml
+--- a/SA-ctf_scoreboard_admin/local/data/ui/views/time_setup.xml	1970-01-01 01:00:00.000000000 +0100
++++ b/SA-ctf_scoreboard_admin/local/data/ui/views/time_setup.xml	2026-09-30 22:45:08.518381476 +0100
+@@ -0,0 +1,111 @@
++<dashboard version="1.1" script="jquery-ui/jquery-ui.min.js, timepicker/jquery-ui-timepicker-addon.js, time_setup.js" stylesheet="css/ui-lightness/jquery-ui.min.css, css/jquery-ui-timepicker-addon.css, time_setup.css ">
++  <label>Time Setup</label>
++  <row>
++    <panel>
++      <title>Edit Start and End Times</title>
++      <html>
++      <div class="row">
++        <div class="column column0">
++          <span class="step_number">0</span><span class="step_title">Review current settings.</span>
++          <span> 
++          <ul> 
++            <li>Ensure you have the proper question set loaded.(see below).</li>
++            <li>Confirm that start/end times require adjustment. (see below) </li>
++          </ul>
++          </span>
++        </div>
++        <div class="column column1">
++          <span class="step_number">1</span><span class="step_title">Specify new Start/End Times</span>
++          <div id="start_time_div" class="start_time_div">
++            <span style="font-weight:bold;">Start Time<br/></span>
++            <input id="start_time_picker" />
++          </div>
++          <div id="end_time_div" class="end_time_div">
++            <span style="font-weight:bold;">End Time<br/></span>
++            <input id="end_time_picker" />
++          </div>
++        </div>
++        <div class="column column2">
++          <span class="step_number">2</span><span class="step_title">Submit changes</span>
++          <div id="update_results_header" class="update_results_header">Results</div>
++          <div id="update_results" class="update_results"></div>
++          <div>
++            <input id="submit_button" type="button" value="Submit Changes" class="submit_button" />
++          </div>
++        </div>
++      </div>
++      </html>
++    </panel>
++  </row>
++  <row>
++    <panel>
++      <html>
++        <div class="current_label">
++          <span class="current_label">Current Questions and Start / End Times</span>
++        </div>
++      </html>
++    </panel>
++  </row>
++  <row>
++    <panel>
++      <title>Earliest Start Time</title>
++      <single>
++        <search>
++          <query>|inputlookup ctf_questions | eval dontcare=$somethingchanged$ |  stats min(StartTime) as MinStartTime | eval NiceStartTime = strftime(MinStartTime, "%+") | fields NiceStartTime</query>
++          <earliest>0</earliest>
++          <sampleRatio>1</sampleRatio>
++        </search>
++        <option name="drilldown">none</option>
++      </single>
++    </panel>
++    <panel>
++      <title>Latest End Time</title>
++      <single>
++        <search>
++          <query>|inputlookup ctf_questions | eval dontcare=$somethingchanged$ | stats max(EndTime) as MaxEndTime | eval NiceEndTime = strftime(MaxEndTime, "%+") | fields NiceEndTime</query>
++          <earliest>0</earliest>
++          <sampleRatio>1</sampleRatio>
++        </search>
++        <option name="drilldown">none</option>
++      </single>
++    </panel>
++    <panel>
++      <title>Start / End Time Consistency</title>
++      <table>
++        <search>
++          <query>| inputlookup ctf_questions | eval dontcare=$somethingchanged$
++| stats dc(StartTime) as NumStartTimes dc(EndTime) as NumEndTimes 
++| eval Status=if(NumStartTimes==1 OR NumEndTimes==1, "OK - Single start and single end time detected", "Warning - different start/end times detected")</query>
++          <earliest>0</earliest>
++          <sampleRatio>1</sampleRatio>
++        </search>
++        <option name="count">20</option>
++        <option name="dataOverlayMode">none</option>
++        <option name="drilldown">none</option>
++        <option name="percentagesRow">false</option>
++        <option name="rowNumbers">false</option>
++        <option name="totalsRow">false</option>
++        <option name="wrap">true</option>
++      </table>
++    </panel>
++  </row>
++  <row>
++    <panel>
++      <title>Question Summary</title>
++      <table>
++        <search>
++          <query>|inputlookup ctf_questions | eval dontcare=$somethingchanged$ | eval NiceStartTime = strftime(StartTime, "%+") |  eval NiceEndTime = strftime(EndTime, "%+")  |  sort StartTime Number | fields Number Question BasePoints NiceStartTime StartTime NiceEndTime EndTime</query>
++          <earliest>0</earliest>
++          <sampleRatio>1</sampleRatio>
++        </search>
++        <option name="count">20</option>
++        <option name="dataOverlayMode">none</option>
++        <option name="drilldown">none</option>
++        <option name="percentagesRow">false</option>
++        <option name="rowNumbers">false</option>
++        <option name="totalsRow">false</option>
++        <option name="wrap">true</option>
++      </table>
++    </panel>
++  </row>
++</dashboard>
+\ No newline at end of file
+diff '--color=auto' -ruN '--exclude=.git' '--exclude=currentscore.csv' a/SA-ctf_scoreboard_admin/local/data/ui/views/user_investigator.xml b/SA-ctf_scoreboard_admin/local/data/ui/views/user_investigator.xml
+--- a/SA-ctf_scoreboard_admin/local/data/ui/views/user_investigator.xml	1970-01-01 01:00:00.000000000 +0100
++++ b/SA-ctf_scoreboard_admin/local/data/ui/views/user_investigator.xml	2026-09-30 18:49:25.646401156 +0100
+@@ -0,0 +1,173 @@
++<form>
++  <label>User Investigator</label>
++  <description>Deep Dive a User, ostensibly to help them</description>
++  <search id="base_1">
++    <query>index="scoreboard_admin" "Result=*" Number !=1 `get_user_info`
++         </query>
++    <earliest>0</earliest>
++    <sampleRatio>1</sampleRatio>
++  </search>
++  <search id="base_2">
++    <query>index="scoreboard_admin" "Result=*" Number !=1 `get_user_info`
++         </query>
++    <earliest>$earliest$</earliest>
++    <latest>$latest$</latest>
++  </search>
++  <fieldset submitButton="false" autoRun="true">
++    <input type="dropdown" token="team" searchWhenChanged="true">
++      <search id="base_0">
++        <query>index="scoreboard_admin" "Result=*" Number !=1 `get_user_info` | dedup Team
++        </query>
++        <earliest>0</earliest>
++      </search>
++      <label>User</label>
++      <fieldForLabel>Team</fieldForLabel>
++      <fieldForValue>Team</fieldForValue>
++      <selectFirstChoice>true</selectFirstChoice>
++    </input>
++  </fieldset>
++  <row>
++    <panel>
++      <title>Average Time to Answer</title>
++      <single>
++        <search base="base_1">
++          <query>
++          | search Team="$team$" | streamstats window=2 current=t global=f earliest(_time) as curr, latest(_time) as next | eventstats count as totalcount| eval delta=next-curr | stats avg(delta) as avgquestiontime | eval avgquestiontime=round(avgquestiontime,0)</query>
++        </search>
++        <option name="rangeValues">[300,600,900,1200]</option>
++        <option name="underLabel">seconds</option>
++        <option name="useColors">1</option>
++      </single>
++    </panel>
++    <panel>
++      <title>Minutes Played</title>
++      <single>
++        <search base="base_1">
++          <query>
++            | search Team="$team$" 
++            | stats earliest(_time) as firsttime,latest(_time) as lasttime 
++            | eval totaltime=lasttime-firsttime 
++            | fields totaltime  
++            | eval totaltime=totaltime/60 
++            | eval totaltime=round(totaltime,0)</query>
++        </search>
++        <option name="underLabel">minutes</option>
++      </single>
++    </panel>
++    <panel>
++      <title>Questions Attempted</title>
++      <single>
++        <search base="base_1">
++          <query>
++          | search Team="$team$" | stats dc(Number) as numquestions</query>
++        </search>
++        <option name="underLabel">Questions</option>
++      </single>
++    </panel>
++  </row>
++  <row>
++    <panel>
++      <title>Current Score</title>
++      <single>
++        <search base="base_1">
++          <query>
++          | search Team="$team$" | lookup currentscore Team OUTPUT Score | stats values(Score) as Score</query>
++        </search>
++        <option name="underLabel">Points</option>
++      </single>
++    </panel>
++    <panel>
++      <title>Current Rank</title>
++      <single>
++        <search base="base_1">
++          <query> 
++          | search Team="$team$" | lookup currentscore Team OUTPUT Rank | stats values(Rank) as rank</query>
++        </search>
++        <option name="underLabel">Place</option>
++        <option name="useColors">1</option>
++      </single>
++    </panel>
++  </row>
++  <row>
++    <panel>
++      <title>Most Incorrectly Answered</title>
++      <single>
++        <search>
++          <query>index="scoreboard_admin" "Result=*" Number !=1 `get_user_info` |  search Team="$team$" | stats values(QuestionOfficial) as question, count by Number | head 1 | eval questnum=Number+":"+question | fields questnum</query>
++          <earliest>0</earliest>
++          <sampleRatio>1</sampleRatio>
++        </search>
++        <option name="colorBy">value</option>
++        <option name="colorMode">none</option>
++        <option name="drilldown">none</option>
++        <option name="numberPrecision">0</option>
++        <option name="rangeColors">["0x65a637","0x6db7c6","0xf7bc38","0xf58f39","0xd93f3c"]</option>
++        <option name="rangeValues">[0,30,70,100]</option>
++        <option name="showSparkline">1</option>
++        <option name="showTrendIndicator">1</option>
++        <option name="trellis.enabled">0</option>
++        <option name="trellis.scales.shared">1</option>
++        <option name="trellis.size">medium</option>
++        <option name="trendColorInterpretation">standard</option>
++        <option name="trendDisplayMode">absolute</option>
++        <option name="unitPosition">after</option>
++        <option name="useColors">0</option>
++        <option name="useThousandSeparators">1</option>
++      </single>
++    </panel>
++  </row>
++  <row>
++    <panel>
++      <title>Question Path</title>
++      <table>
++        <search base="base_1">
++          <query>
++          | search Team="$team$" | rename Number as "Question Number" |eval color=if(Result="Incorrect","red","green") |table _time Result "Question Number" color</query>
++        </search>
++      </table>
++    </panel>
++    <panel>
++      <title>Question/Answer Density</title>
++      <table>
++        <search base="base_1">
++          <query>| search Team="$team$" 
++| eval binresult=if(Result="Correct",1000,2000) 
++| table _time, Number,Result</query>
++        </search>
++        <option name="drilldown">none</option>
++      </table>
++    </panel>
++  </row>
++  <row>
++    <panel>
++      <title>Order of Correct Questions</title>
++      <single>
++        <search base="base_2">
++          <query>
++          | search Team="$team$" | table Number|reverse | stats list(Number) as number |mvcombine number</query>
++        </search>
++      </single>
++    </panel>
++    <panel>
++      <title>Order of Incorrect Questions</title>
++      <single>
++        <search base="base_2">
++          <query>
++        | search Team="$team$" | table Number|reverse | stats list(Number) as number |mvcombine number</query>
++        </search>
++      </single>
++    </panel>
++  </row>
++  <row>
++    <panel>
++      <title>Question Details</title>
++      <table>
++        <search base="base_2">
++          <query>
++          | table _time, Number, QuestionOfficial, Answer, user, Result,DisplayUsername</query>
++        </search>
++        <option name="count">25</option>
++      </table>
++    </panel>
++  </row>
++</form>
+\ No newline at end of file

@@ -1,0 +1,12 @@
+<dashboard version="1.1" script="instantiate_countdown.js" stylesheet="countdown.css">
+  <label>Time Remaining</label>
+  <row>
+    <panel>
+      <html>
+        <div id="clock">
+        </div>
+        <div id="clock-text">(Days:Hours:Minutes:Seconds)</div>
+      </html>
+    </panel>
+  </row>
+</dashboard>

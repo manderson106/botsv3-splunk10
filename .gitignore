@@ -1,0 +1,25 @@
+# secrets and per-event data: never commit
+*.token
+/credentials*
+*credentials*.csv
+*-password.txt
+roster*.csv
+!roster.example.csv
+roster*.tsv
+roster*.xlsx
+*.env
+.env
+splunk.secret
+passwords.conf
+scoreboard_controller.config
+backuprestore.config
+stream_shared_key
+# official BOTS v3 content is supplied by Splunk on request; do not redistribute
+content/*
+!content/README.md
+# downloads
+downloads/
+*.tgz
+*.log
+__pycache__/
+*.pyc

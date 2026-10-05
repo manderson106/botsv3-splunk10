@@ -1,0 +1,20 @@
+# EXPERIMENTAL / UNTESTED. Run docker/prepare.sh first. Splunk Web is published on localhost only.
+services:
+  splunk:
+    image: splunk/splunk:10.4.4
+    platform: linux/amd64
+    hostname: botsv3
+    environment:
+      SPLUNK_START_ARGS: --accept-license
+      SPLUNK_GENERAL_TERMS: --accept-sgt-current-at-splunk-com
+      SPLUNK_PASSWORD: ${SPLUNK_ADMIN_PASSWORD:?set SPLUNK_ADMIN_PASSWORD in .env}
+      SPLUNK_APPS_URL: ${APPS_URLS}
+    ports:
+      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:8089:8089"
+    volumes:
+      - ./staging/apps:/tmp/apps:ro
+      - ./staging/authorize.conf:/opt/splunk/etc/system/local/authorize.conf:ro
+      - splunk-var:/opt/splunk/var
+volumes:
+  splunk-var:

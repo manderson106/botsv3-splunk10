@@ -1,0 +1,22 @@
+<dashboard version="1.1" script="all_ebadges.js" stylesheet="all_ebadges.css" hideEdit="True" theme="dark" >
+  <label>eBadge Descriptions</label>
+  <row>
+    <panel>
+      <table id="badge_table">
+        <search>
+          <query>| inputlookup ctf_badges | table BadgeNumber, BadgeURL,  BadgeName, BadgeDescription | fields - BadgeNumber</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</dashboard>
